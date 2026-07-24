@@ -45,6 +45,10 @@ const penanceConfirmRow = document.getElementById('penanceConfirmRow');
 const confirmPenanceBtn = document.getElementById('confirmPenanceBtn');
 const declinePenanceBtn = document.getElementById('declinePenanceBtn');
 
+const duelSendPopup = document.getElementById('duelSendPopup');
+const duelSendCategory = document.getElementById('duelSendCategory');
+const confirmSendBtn = document.getElementById('confirmSendBtn');
+
 const logPanel = document.getElementById('logPanel');
 const MAX_LOG_ENTRIES = 60;
 
@@ -108,12 +112,7 @@ function handleMessage(msg) {
         if (document.activeElement !== penanceLimitInput) {
             penanceLimitInput.value = s.penance_limit;
         }
-        leaderboard.innerHTML = '';
-        s.leaderboard.forEach((row, i) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${i + 1}.</td><td>${row.name}</td><td>${row.score}</td>`;
-            leaderboard.appendChild(tr);
-        });
+        renderLeaderboard(leaderboard, s.leaderboard);
         if (s.phase === 'game_over' && !gameOverShown) {
             gameOverShown = true;
             fxEpicEnd('win', '🏆 VITTORIA! 🏆', 'La Laureata e stata sconfitta! Complimenti a tutti gli invitati!');
@@ -152,6 +151,14 @@ function handleMessage(msg) {
         buildWheel(wheelWrap);
     } else if (msg.type === 'wheel_result') {
         spinWheelTo(wheelWrap, msg.payload.category);
+    } else if (msg.type === 'duel_ready_confirm') {
+        duelSendCategory.textContent = categoryLabel(msg.payload.category);
+        duelSendPopup.style.display = 'flex';
+    } else if (msg.type === 'duel_countdown') {
+        duelSendPopup.style.display = 'none';
+        fxCountdown(msg.payload.seconds, 'La sfida sta per aprirsi!');
+    } else if (msg.type === 'round_countdown') {
+        fxCountdown(msg.payload.seconds, 'La domanda sta per aprirsi!');
     } else if (msg.type === 'duel_challenge') {
         wheelCard.style.display = 'none';
         duelResultCard.style.display = 'none';
@@ -229,9 +236,11 @@ function handleMessage(msg) {
         pulseHpFlash(hpBar, hpBarWrap, 'damage');
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
+        duelSendPopup.style.display = 'none';
     } else if (msg.type === 'reset') {
         hideDuelScreen();
         penanceScreen.style.display = 'none';
+        duelSendPopup.style.display = 'none';
         stopCountdownBar(duelTimerBar);
         gameOverShown = false;
     }
@@ -245,6 +254,10 @@ document.getElementById('dmg25').onclick = () => ws.send(JSON.stringify({ type: 
 document.getElementById('dmg100').onclick = () => ws.send(JSON.stringify({ type: 'damage_boss', amount: 100 }));
 confirmPenanceBtn.onclick = () => ws.send(JSON.stringify({ type: 'confirm_penance' }));
 declinePenanceBtn.onclick = () => ws.send(JSON.stringify({ type: 'decline_penance' }));
+confirmSendBtn.onclick = () => {
+    ws.send(JSON.stringify({ type: 'confirm_duel_send' }));
+    duelSendPopup.style.display = 'none';
+};
 
 setPenanceLimitBtn.onclick = () => {
     const limit = parseInt(penanceLimitInput.value, 10);

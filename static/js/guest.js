@@ -29,6 +29,7 @@ const duelSpectatorNote = document.getElementById('duelSpectatorNote');
 const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
 const duelTimerBar = document.getElementById('duelTimerBar');
+const wheelStatusText = document.getElementById('wheelStatusText');
 
 const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
 
@@ -88,6 +89,9 @@ function handleMessage(msg) {
         winnerBanner.style.display = 'none';
         hideDuelScreen();
         statusLine.textContent = 'La laureata sta rispondendo... preparati!';
+    } else if (msg.type === 'round_countdown') {
+        statusLine.textContent = 'Ha risposto! La domanda sta per aprirsi...';
+        fxCountdown(msg.payload.seconds);
     } else if (msg.type === 'round_open') {
         hasAnsweredThisRound = false;
         winnerBanner.style.display = 'none';
@@ -122,6 +126,12 @@ function handleMessage(msg) {
         startDuelView(msg.payload.challenger_name);
     } else if (msg.type === 'wheel_result') {
         showWheelSpin(msg.payload.category);
+        setTimeout(() => {
+            wheelStatusText.textContent = 'Ruota fermata! In attesa che la regia invii la sfida a tutti...';
+        }, WHEEL_SPIN_SECONDS_JS * 1000);
+    } else if (msg.type === 'duel_countdown') {
+        wheelStatusText.textContent = 'La sfida si apre a momenti!';
+        fxCountdown(msg.payload.seconds);
     } else if (msg.type === 'duel_challenge') {
         showDuelChallenge(msg.payload);
     } else if (msg.type === 'duel_answer_registered') {
@@ -207,6 +217,7 @@ function startDuelView(challengerName) {
     duelResultCard.style.display = 'none';
     duelChallengerLine.textContent = `Scontro Diretto: ${challengerName} vs La Laureata!`;
     wheelCard.style.display = 'block';
+    wheelStatusText.textContent = 'La festeggiata sta girando la ruota...';
     buildWheel(wheelWrap);
     hasAnsweredDuel = false;
 }
@@ -306,12 +317,7 @@ function updateState(state) {
             fxEpicEnd('win', '🏆 VITTORIA! 🏆', 'La Laureata e stata sconfitta! Complimenti a tutti gli invitati!');
         }
     }
-    leaderboard.innerHTML = '';
-    state.leaderboard.forEach((row, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i + 1}.</td><td>${row.name}</td><td>${row.score}</td>`;
-        leaderboard.appendChild(tr);
-    });
+    renderLeaderboard(leaderboard, state.leaderboard);
 }
 
 joinBtn.onclick = () => {

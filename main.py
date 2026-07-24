@@ -21,6 +21,8 @@ PUBLIC_URL = os.environ.get("PUBLIC_URL", "")
 WHEEL_SPIN_SECONDS = 3.0  # must match the CSS transition duration in static/js/wheel.js
 DUEL_TIMEOUT_SECONDS = 20.0
 RETURN_HOME_SECONDS = 5.0  # quanto restare sulla schermata di risultato prima di tornare alla home
+DUEL_COUNTDOWN_SECONDS = 3.0  # conto alla rovescia dopo che la regia invia la sfida a tutti
+ROUND_COUNTDOWN_SECONDS = 3.0  # conto alla rovescia dopo la risposta del boss, prima che gli invitati vedano la domanda
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -29,6 +31,7 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 game = GameState(BASE_DIR / "questions.json", BASE_DIR / "duels.json", BASE_DIR / "penitenze.json")
 duel_timeout_task: asyncio.Task | None = None
+duel_countdown_task: asyncio.Task | None = None
 
 
 class Hub:
@@ -86,6 +89,13 @@ def cancel_duel_timeout():
         duel_timeout_task = None
 
 
+def cancel_duel_countdown():
+    global duel_countdown_task
+    if duel_countdown_task is not None:
+        duel_countdown_task.cancel()
+        duel_countdown_task = None
+
+
 async def broadcast_duel_result(payload: dict):
     await hub.to_all({"type": "duel_result", "payload": payload})
     await broadcast_state()
@@ -131,18 +141,37 @@ async def run_penance_sequence():
 
 
 async def run_wheel_sequence():
-    global duel_timeout_task
     category = game.spin_wheel()
     if category is None:
         return
     await log(f"🎡 Ruota dello scontro girata: categoria \"{category}\"")
     await hub.to_all({"type": "wheel_result", "payload": {"category": category}})
     await asyncio.sleep(WHEEL_SPIN_SECONDS)
+    await hub.to_regia({"type": "duel_ready_confirm", "payload": {"category": category}})
+    await log("🎯 Sfida pronta: in attesa che la regia la invii a tutti...")
+
+
+async def run_duel_countdown():
+    global duel_timeout_task
+    await hub.to_all({"type": "duel_countdown", "payload": {"seconds": DUEL_COUNTDOWN_SECONDS}})
+    try:
+        await asyncio.sleep(DUEL_COUNTDOWN_SECONDS)
+    except asyncio.CancelledError:
+        return
     game.open_duel_challenge()
     await hub.to_all({"type": "duel_challenge", "payload": game.public_duel_challenge()})
     await broadcast_state()
     await log("🎯 Sfida rivelata, in attesa delle risposte...")
     duel_timeout_task = asyncio.create_task(run_duel_timeout())
+
+
+async def run_round_open_sequence():
+    await hub.to_all({"type": "round_countdown", "payload": {"seconds": ROUND_COUNTDOWN_SECONDS}})
+    await asyncio.sleep(ROUND_COUNTDOWN_SECONDS)
+    q = game.current_question
+    await hub.to_guests({"type": "round_open", "payload": {"text": q["text"], "options": q["options"]}})
+    await log(f"👑 La festeggiata ha risposto alla domanda {game.round_index + 1}. Ora rispondono gli invitati.")
+    await broadcast_state()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -231,10 +260,7 @@ async def ws_boss(websocket: WebSocket, key: str = ""):
             if t == "answer":
                 ok = game.submit_boss_answer(int(data["choice"]))
                 if ok:
-                    q = game.current_question
-                    await hub.to_guests({"type": "round_open", "payload": {"text": q["text"], "options": q["options"]}})
-                    await log(f"👑 La festeggiata ha risposto alla domanda {game.round_index + 1}. Ora rispondono gli invitati.")
-                    await broadcast_state()
+                    asyncio.create_task(run_round_open_sequence())
             elif t == "spin_wheel":
                 asyncio.create_task(run_wheel_sequence())
             elif t == "spin_penance":
@@ -260,6 +286,7 @@ async def ws_boss(websocket: WebSocket, key: str = ""):
 
 @app.websocket("/ws/regia")
 async def ws_regia(websocket: WebSocket, key: str = ""):
+    global duel_countdown_task
     if key != ADMIN_KEY:
         await websocket.close(code=4001)
         return
@@ -290,8 +317,14 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 else:
                     await log("🚫 Impossibile avviare lo scontro: nessun vincitore in attesa.")
                 await broadcast_state()
+            elif t == "confirm_duel_send":
+                if game.confirm_duel_send():
+                    duel_countdown_task = asyncio.create_task(run_duel_countdown())
+                else:
+                    await log("ℹ️ Nessuna sfida in attesa di essere inviata.")
             elif t == "cancel_duel":
                 cancel_duel_timeout()
+                cancel_duel_countdown()
                 if game.cancel_duel():
                     await hub.to_all({"type": "duel_cancelled", "payload": {}})
                     await log("🚫 Scontro diretto annullato dalla regia.")
@@ -325,6 +358,7 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 await broadcast_state()
             elif t == "reset":
                 cancel_duel_timeout()
+                cancel_duel_countdown()
                 game.reset()
                 await hub.to_all({"type": "reset", "payload": {}})
                 await log("🔄 Partita resettata dalla regia.")

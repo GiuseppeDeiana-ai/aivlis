@@ -53,6 +53,7 @@ class GameState:
         self.duel_challenge: Optional[dict] = None
         self.duel_answers: dict[str, dict] = {}
         self.duel_winner: Optional[str] = None
+        self.duel_awaiting_confirm: bool = False
 
         self.penance_limit: int = DEFAULT_PENANCE_LIMIT
         self.penance_used: int = 0
@@ -79,6 +80,7 @@ class GameState:
         self.duel_challenge = None
         self.duel_answers = {}
         self.duel_winner = None
+        self.duel_awaiting_confirm = False
         return True
 
     def submit_boss_answer(self, choice: int) -> bool:
@@ -127,6 +129,7 @@ class GameState:
         self.duel_challenge = None
         self.duel_answers = {}
         self.duel_winner = None
+        self.duel_awaiting_confirm = False
         self.penance_used = 0
         self.used_penance_indices = set()
         self.pending_penance_heal = None
@@ -150,6 +153,7 @@ class GameState:
         self.duel_challenge = None
         self.duel_answers = {}
         self.duel_winner = None
+        self.duel_awaiting_confirm = False
         self.phase = Phase.ROUND_RESULT
         return True
 
@@ -170,7 +174,15 @@ class GameState:
         self.duel_challenge = self._pick_challenge(category)
         self.duel_answers = {}
         self.duel_winner = None
+        self.duel_awaiting_confirm = True
         return category
+
+    def confirm_duel_send(self) -> bool:
+        """La regia conferma l'invio della sfida a tutti dopo lo spin della ruota."""
+        if not self.duel_awaiting_confirm:
+            return False
+        self.duel_awaiting_confirm = False
+        return True
 
     def open_duel_challenge(self):
         self.phase = Phase.DUEL_CHALLENGE

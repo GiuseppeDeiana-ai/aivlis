@@ -28,6 +28,7 @@ const duelSpectatorNote = document.getElementById('duelSpectatorNote');
 const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
 const duelTimerBar = document.getElementById('duelTimerBar');
+const wheelStatusText = document.getElementById('wheelStatusText');
 
 const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
 
@@ -73,7 +74,10 @@ function hideDuelScreen() {
 }
 
 function handleMessage(msg) {
-    if (msg.type === 'round_started') {
+    if (msg.type === 'round_countdown') {
+        statusLine.textContent = 'Il conto alla rovescia e iniziato per gli invitati...';
+        fxCountdown(msg.payload.seconds);
+    } else if (msg.type === 'round_started') {
         hasAnswered = false;
         hideDuelScreen();
         penanceCard.style.display = 'block';
@@ -97,12 +101,19 @@ function handleMessage(msg) {
         duelResultCard.style.display = 'none';
         duelChallengerLine.textContent = `Scontro Diretto contro ${msg.payload.challenger_name}!`;
         wheelCard.style.display = 'block';
+        wheelStatusText.textContent = '';
         buildWheel(wheelWrap);
         spinBtn.disabled = false;
         statusLine.textContent = 'Gira la ruota per scegliere la categoria!';
     } else if (msg.type === 'wheel_result') {
         spinBtn.disabled = true;
         spinWheelTo(wheelWrap, msg.payload.category);
+        setTimeout(() => {
+            wheelStatusText.textContent = 'Ruota fermata! In attesa che la regia invii la sfida a tutti...';
+        }, WHEEL_SPIN_SECONDS_JS * 1000);
+    } else if (msg.type === 'duel_countdown') {
+        wheelStatusText.textContent = 'La sfida si apre a momenti!';
+        fxCountdown(msg.payload.seconds);
     } else if (msg.type === 'duel_challenge') {
         wheelCard.style.display = 'none';
         duelResultCard.style.display = 'none';

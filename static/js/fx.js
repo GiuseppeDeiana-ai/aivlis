@@ -159,6 +159,39 @@ function fxEpicEnd(kind, title, caption) {
     setTimeout(() => overlay.remove(), 9000);
 }
 
+function fxCountdown(seconds, label = "") {
+    const existing = document.getElementById("fxCountdownEl");
+    if (existing) existing.remove();
+    const overlay = fxOverlay();
+    const div = document.createElement("div");
+    div.id = "fxCountdownEl";
+    div.className = "fx-countdown";
+    overlay.appendChild(div);
+
+    if (label) {
+        const lbl = document.createElement("div");
+        lbl.className = "fx-countdown-label";
+        lbl.textContent = label;
+        overlay.appendChild(lbl);
+        setTimeout(() => lbl.remove(), seconds * 1000 + 200);
+    }
+
+    let n = Math.round(seconds);
+    const tick = () => {
+        if (n <= 0) {
+            div.remove();
+            return;
+        }
+        div.textContent = n;
+        div.classList.remove("fx-countdown-pop");
+        void div.offsetWidth;
+        div.classList.add("fx-countdown-pop");
+        n -= 1;
+        setTimeout(tick, 1000);
+    };
+    tick();
+}
+
 function startCountdownBar(el, seconds) {
     if (!el) return;
     el.style.animation = "none";

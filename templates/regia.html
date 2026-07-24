@@ -103,7 +103,7 @@
         <h2 id="duelChallengerLine" class="center"></h2>
         <div class="card center" id="wheelCard" style="display:none;">
             <div class="wheel-wrap" id="wheelWrap"></div>
-            <div class="status">In attesa che la festeggiata giri la ruota...</div>
+            <div class="status" id="wheelStatusText">In attesa che la festeggiata giri la ruota...</div>
         </div>
         <div class="card center" id="duelChallengeCard" style="display:none;">
             <h3 id="duelCategoryTitle"></h3>
@@ -119,13 +119,22 @@
 
     <div class="card center">
         <h3>Classifica</h3>
-        <table class="leaderboard" id="leaderboard"></table>
+        <div class="leaderboard-list" id="leaderboard"></div>
+    </div>
+</div>
+
+<div id="duelSendPopup" class="duel-send-popup" style="display:none;">
+    <div class="duel-send-card">
+        <h3>🎯 Sfida pronta!</h3>
+        <p>Categoria: <strong id="duelSendCategory"></strong></p>
+        <button class="primary" id="confirmSendBtn">📢 Invia la domanda a tutti!</button>
     </div>
 </div>
 
 <script src="/static/js/wheel.js"></script>
 <script src="/static/js/gallery.js"></script>
 <script src="/static/js/fx.js"></script>
+<script src="/static/js/leaderboard.js"></script>
 <script src="/static/js/regia.js"></script>
 </body>
 </html>

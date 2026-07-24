@@ -52,7 +52,7 @@
         <h2 id="duelChallengerLine" class="center"></h2>
         <div class="card center" id="wheelCard" style="display:none;">
             <div class="wheel-wrap" id="wheelWrap"></div>
-            <div class="status">La festeggiata sta girando la ruota...</div>
+            <div class="status" id="wheelStatusText">La festeggiata sta girando la ruota...</div>
         </div>
         <div class="card" id="duelChallengeCard" style="display:none;">
             <h3 id="duelCategoryTitle"></h3>
@@ -78,13 +78,14 @@
 
     <div class="card center">
         <h3>Classifica</h3>
-        <table class="leaderboard" id="leaderboard"></table>
+        <div class="leaderboard-list" id="leaderboard"></div>
     </div>
 </div>
 
 <script src="/static/js/wheel.js"></script>
 <script src="/static/js/gallery.js"></script>
 <script src="/static/js/fx.js"></script>
+<script src="/static/js/leaderboard.js"></script>
 <script src="/static/js/guest.js"></script>
 </body>
 </html>
