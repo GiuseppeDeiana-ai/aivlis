@@ -28,6 +28,9 @@ const duelOptionsBox = document.getElementById('duelOptionsBox');
 const duelSpectatorNote = document.getElementById('duelSpectatorNote');
 const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
+const duelTimerBar = document.getElementById('duelTimerBar');
+
+const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
 
 const penanceBadge = document.getElementById('penanceBadge');
 const penanceLimitInput = document.getElementById('penanceLimitInput');
@@ -42,6 +45,7 @@ const logPanel = document.getElementById('logPanel');
 const MAX_LOG_ENTRIES = 60;
 
 let ws = null;
+let gameOverShown = false;
 
 function addLogEntry(ts, text) {
     const time = new Date(ts * 1000).toLocaleTimeString('it-IT');
@@ -105,6 +109,10 @@ function handleMessage(msg) {
             tr.innerHTML = `<td>${i + 1}.</td><td>${row.name}</td><td>${row.score}</td>`;
             leaderboard.appendChild(tr);
         });
+        if (s.phase === 'game_over' && !gameOverShown) {
+            gameOverShown = true;
+            fxEpicEnd('win', '🏆 VITTORIA! 🏆', 'La Laureata e stata sconfitta! Complimenti a tutti gli invitati!');
+        }
     } else if (msg.type === 'penance_spin') {
         penanceScreen.style.display = 'block';
         penanceRevealBox.style.display = 'none';
@@ -120,6 +128,7 @@ function handleMessage(msg) {
         pulseHpFlash(hpBar, hpBarWrap, 'heal');
     } else if (msg.type === 'winner') {
         fxFire();
+        fxConfetti(40);
     } else if (msg.type === 'duel_start') {
         fxSkull();
         penanceScreen.style.display = 'none';
@@ -136,6 +145,8 @@ function handleMessage(msg) {
         duelResultCard.style.display = 'none';
         duelChallengeCard.style.display = 'block';
         duelCategoryTitle.textContent = `Indovina la ${categoryLabel(msg.payload.category).toLowerCase()}`;
+        fxThemeParticles(msg.payload.category);
+        startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
         duelMedia.innerHTML = '';
         if (msg.payload.category === 'musica' && msg.payload.media) {
             const audio = document.createElement('audio');
@@ -172,6 +183,7 @@ function handleMessage(msg) {
             ? 'La festeggiata ha risposto!'
             : 'Lo sfidante ha risposto!';
     } else if (msg.type === 'duel_result') {
+        stopCountdownBar(duelTimerBar);
         duelResultCard.style.display = 'block';
         Array.from(duelOptionsBox.children).forEach((b, idx) => {
             if (idx === msg.payload.correct_option) b.style.outline = '3px solid #00e676';
@@ -182,7 +194,9 @@ function handleMessage(msg) {
             duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! -${msg.payload.damage} HP alla festeggiata!`;
             pulseShake(bossPortrait);
             pulseHpFlash(hpBar, hpBarWrap, 'damage');
+            fxScreenShake();
             fxFire();
+            fxConfetti(50);
             fxPhotoFlash('win', `${msg.payload.winner_name} vince lo scontro!`);
         } else if (msg.payload.outcome === 'boss') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
@@ -206,6 +220,8 @@ function handleMessage(msg) {
     } else if (msg.type === 'reset') {
         hideDuelScreen();
         penanceScreen.style.display = 'none';
+        stopCountdownBar(duelTimerBar);
+        gameOverShown = false;
     }
 }
 

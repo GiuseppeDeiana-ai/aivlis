@@ -27,6 +27,9 @@ const duelOptionsBox = document.getElementById('duelOptionsBox');
 const duelSpectatorNote = document.getElementById('duelSpectatorNote');
 const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
+const duelTimerBar = document.getElementById('duelTimerBar');
+
+const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
 
 const penanceScreen = document.getElementById('penanceScreen');
 const penanceWheelWrap = document.getElementById('penanceWheelWrap');
@@ -37,6 +40,7 @@ const penanceRevealHeal = document.getElementById('penanceRevealHeal');
 let ws = null;
 let hasAnsweredThisRound = false;
 let hasAnsweredDuel = false;
+let gameOverShown = false;
 
 function getGuestId() {
     let id = localStorage.getItem('guest_id');
@@ -111,6 +115,7 @@ function handleMessage(msg) {
         winnerBanner.textContent = `${msg.payload.name} ha indovinato per primo! Scontro diretto!`;
         disableOptions();
         fxFire();
+        fxConfetti(40);
     } else if (msg.type === 'duel_start') {
         fxSkull();
         startDuelView(msg.payload.challenger_name);
@@ -125,11 +130,14 @@ function handleMessage(msg) {
                 : 'Lo sfidante ha risposto! Aspettiamo l\'esito...';
         }
     } else if (msg.type === 'duel_result') {
+        stopCountdownBar(duelTimerBar);
         showDuelResult(msg.payload);
         if (msg.payload.outcome === 'challenger') {
             pulseShake(bossPortrait);
             pulseHpFlash(hpBar, hpBarWrap, 'damage');
+            fxScreenShake();
             fxFire();
+            fxConfetti(50);
             fxPhotoFlash('win', `${msg.payload.winner_name} vince lo scontro!`);
         } else if (msg.payload.outcome === 'boss') {
             fxVoid();
@@ -167,6 +175,8 @@ function handleMessage(msg) {
         winnerBanner.style.display = 'none';
         hideDuelScreen();
         penanceScreen.style.display = 'none';
+        stopCountdownBar(duelTimerBar);
+        gameOverShown = false;
         statusLine.textContent = 'Il gioco e stato resettato. In attesa della prossima domanda...';
     }
 }
@@ -211,6 +221,8 @@ function showDuelChallenge(payload) {
     hasAnsweredDuel = false;
 
     duelCategoryTitle.textContent = `Indovina la ${categoryLabel(payload.category).toLowerCase()}`;
+    fxThemeParticles(payload.category);
+    startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
     duelMedia.innerHTML = '';
     if (payload.category === 'musica') {
         duelMedia.innerHTML = '<div class="status">🎵 Ascolta dalle casse della regia...</div>';
@@ -283,6 +295,10 @@ function updateState(state) {
     hpLabel.textContent = `HP ${state.hp}/${state.max_hp}`;
     if (state.phase === 'game_over') {
         statusLine.textContent = 'La laureata e stata sconfitta! Complimenti a tutti!';
+        if (!gameOverShown) {
+            gameOverShown = true;
+            fxEpicEnd('win', '🏆 VITTORIA! 🏆', 'La Laureata e stata sconfitta! Complimenti a tutti gli invitati!');
+        }
     }
     leaderboard.innerHTML = '';
     state.leaderboard.forEach((row, i) => {

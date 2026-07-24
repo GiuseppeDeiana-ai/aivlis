@@ -26,6 +26,9 @@ const duelOptionsBox = document.getElementById('duelOptionsBox');
 const duelSpectatorNote = document.getElementById('duelSpectatorNote');
 const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
+const duelTimerBar = document.getElementById('duelTimerBar');
+
+const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
 
 const penanceCard = document.getElementById('penanceCard');
 const penanceWheelWrap = document.getElementById('penanceWheelWrap');
@@ -40,6 +43,7 @@ let hasAnswered = false;
 let hasAnsweredDuel = false;
 let penanceSpinning = false;
 let lastPenanceCount = 0;
+let gameOverShown = false;
 
 function connect(key) {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -104,6 +108,8 @@ function handleMessage(msg) {
         duelChallengeCard.style.display = 'block';
         hasAnsweredDuel = false;
         duelCategoryTitle.textContent = `Indovina la ${categoryLabel(msg.payload.category).toLowerCase()}`;
+        fxThemeParticles(msg.payload.category);
+        startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
         duelMedia.innerHTML = '';
         if (msg.payload.category === 'musica') {
             duelMedia.innerHTML = '<div class="status">🎵 Ascolta dalle casse della regia...</div>';
@@ -135,6 +141,7 @@ function handleMessage(msg) {
             duelSpectatorNote.textContent = 'Lo sfidante ha risposto! Sbrigati!';
         }
     } else if (msg.type === 'duel_result') {
+        stopCountdownBar(duelTimerBar);
         duelResultCard.style.display = 'block';
         Array.from(duelOptionsBox.children).forEach((b, idx) => {
             b.disabled = true;
@@ -145,12 +152,14 @@ function handleMessage(msg) {
             duelResultBanner.style.background = '';
             duelResultBanner.textContent = 'Hai risposto prima tu! Nessun danno!';
             fxFire();
+            fxConfetti(50);
             fxPhotoFlash('win', 'Hai vinto lo scontro!');
         } else if (msg.payload.outcome === 'challenger') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! Hai subito ${msg.payload.damage} danni!`;
             pulseShake(bossPortrait);
             pulseHpFlash(hpBar, hpBarWrap, 'damage');
+            fxScreenShake();
             fxVoid();
             fxPhotoFlash('lose', 'Hai perso lo scontro!');
         } else if (msg.payload.outcome === 'timeout') {
@@ -205,6 +214,10 @@ function handleMessage(msg) {
             statusLine.textContent = 'Sei stata sconfitta! Complimenti alla laurea!';
             questionCard.style.display = 'none';
             hideDuelScreen();
+            if (!gameOverShown) {
+                gameOverShown = true;
+                fxEpicEnd('lose', '💀 SEI STATA SCONFITTA! 💀', 'Gli invitati hanno vinto! Complimenti a tutti!');
+            }
         }
     } else if (msg.type === 'boss_hit') {
         statusLine.textContent = `Hai subito ${msg.payload.amount} danni!`;
@@ -216,6 +229,8 @@ function handleMessage(msg) {
         penanceCard.style.display = 'block';
         penanceRevealCard.style.display = 'none';
         penanceWheelWrap.style.display = 'none';
+        stopCountdownBar(duelTimerBar);
+        gameOverShown = false;
         statusLine.textContent = 'Il gioco e stato resettato.';
     }
 }
