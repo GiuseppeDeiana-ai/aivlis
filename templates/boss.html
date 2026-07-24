@@ -21,6 +21,19 @@
 
 <div id="gameScreen" style="display:none; width:100%; max-width:480px;">
     <div class="status" id="statusLine">In attesa che la regia avvii la domanda...</div>
+
+    <div class="card center" id="penanceCard">
+        <h3>Ruota delle Penitenze</h3>
+        <div class="status">Guadagna HP extra facendo una penitenza a sorte</div>
+        <div class="wheel-wrap" id="penanceWheelWrap" style="display:none;"></div>
+        <div class="card" id="penanceRevealCard" style="display:none;">
+            <p id="penanceRevealText" style="font-size:1.2rem; font-weight:700; text-align:center;"></p>
+            <div class="status" id="penanceRevealHeal"></div>
+        </div>
+        <button class="primary" id="penanceSpinBtn">Gira la ruota delle penitenze</button>
+        <div class="status" id="penanceStatusLine"></div>
+    </div>
+
     <div class="card" id="questionCard" style="display:none;">
         <h3 id="questionText"></h3>
         <div class="options" id="optionsBox"></div>
@@ -32,9 +45,10 @@
             <div class="wheel-wrap" id="wheelWrap"></div>
             <button class="primary" id="spinBtn">Gira la ruota!</button>
         </div>
-        <div class="card center" id="duelChallengeCard" style="display:none;">
+        <div class="card" id="duelChallengeCard" style="display:none;">
             <h3 id="duelCategoryTitle"></h3>
             <div id="duelMedia"></div>
+            <div class="options" id="duelOptionsBox"></div>
             <div class="status" id="duelSpectatorNote"></div>
         </div>
         <div class="card center" id="duelResultCard" style="display:none;">

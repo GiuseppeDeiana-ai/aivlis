@@ -50,9 +50,24 @@
             <button class="primary" id="dmg25">-25 HP</button>
             <button class="primary danger" id="dmg100">KO</button>
         </div>
+        <h4>Ruota delle Penitenze</h4>
+        <div class="badge" id="penanceBadge">penitenze: 0/3</div>
+        <div class="row">
+            <input type="number" id="penanceLimitInput" min="0" style="width:80px; margin:0;" placeholder="Limite">
+            <button class="primary" id="setPenanceLimitBtn">Imposta limite</button>
+        </div>
         <h4>Gioco</h4>
         <div class="row">
             <button class="primary danger" id="resetBtn">Reset partita</button>
+        </div>
+    </div>
+
+    <div class="card center" id="penanceScreen" style="display:none;">
+        <h3>Ruota delle Penitenze</h3>
+        <div class="wheel-wrap" id="penanceWheelWrap" style="display:none;"></div>
+        <div id="penanceRevealBox" style="display:none;">
+            <p id="penanceRevealText" style="font-size:1.1rem; font-weight:700;"></p>
+            <div class="status" id="penanceRevealHeal"></div>
         </div>
     </div>
 

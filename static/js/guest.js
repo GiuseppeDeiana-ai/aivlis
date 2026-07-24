@@ -23,6 +23,12 @@ const duelSpectatorNote = document.getElementById('duelSpectatorNote');
 const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
 
+const penanceScreen = document.getElementById('penanceScreen');
+const penanceWheelWrap = document.getElementById('penanceWheelWrap');
+const penanceRevealBox = document.getElementById('penanceRevealBox');
+const penanceRevealText = document.getElementById('penanceRevealText');
+const penanceRevealHeal = document.getElementById('penanceRevealHeal');
+
 let ws = null;
 let hasAnsweredThisRound = false;
 let hasAnsweredDuel = false;
@@ -104,17 +110,34 @@ function handleMessage(msg) {
         showWheelSpin(msg.payload.category);
     } else if (msg.type === 'duel_challenge') {
         showDuelChallenge(msg.payload);
+    } else if (msg.type === 'duel_answer_registered') {
+        if (!hasAnsweredDuel) {
+            duelSpectatorNote.textContent = msg.payload.by === 'boss'
+                ? 'La festeggiata ha risposto! Sbrigati!'
+                : 'Lo sfidante ha risposto! Aspettiamo l\'esito...';
+        }
     } else if (msg.type === 'duel_result') {
         showDuelResult(msg.payload);
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
         statusLine.textContent = 'Scontro diretto annullato dalla regia.';
+    } else if (msg.type === 'penance_spin') {
+        penanceScreen.style.display = 'block';
+        penanceRevealBox.style.display = 'none';
+        penanceWheelWrap.style.display = 'block';
+        buildPenanceWheel(penanceWheelWrap, msg.payload.count);
+        spinPenanceWheelTo(penanceWheelWrap, msg.payload.count, msg.payload.index);
+    } else if (msg.type === 'penance_result') {
+        penanceRevealBox.style.display = 'block';
+        penanceRevealText.textContent = msg.payload.text;
+        penanceRevealHeal.textContent = `+${msg.payload.heal} HP alla festeggiata!`;
     } else if (msg.type === 'state') {
         updateState(msg.payload);
     } else if (msg.type === 'reset') {
         questionCard.style.display = 'none';
         winnerBanner.style.display = 'none';
         hideDuelScreen();
+        penanceScreen.style.display = 'none';
         statusLine.textContent = 'Il gioco e stato resettato. In attesa della prossima domanda...';
     }
 }
@@ -192,8 +215,8 @@ function showDuelChallenge(payload) {
     });
 
     duelSpectatorNote.textContent = isChallenger
-        ? 'Rispondi tu! Hai poco tempo!'
-        : `In attesa che ${payload.challenger_name} risponda...`;
+        ? `Rispondi tu contro la festeggiata! Chi risponde correttamente prima vince!`
+        : `${payload.challenger_name} vs La Laureata: chi risponde prima correttamente vince!`;
 }
 
 function submitDuelAnswer(idx) {
@@ -209,17 +232,19 @@ function showDuelResult(payload) {
         b.disabled = true;
         if (idx === payload.correct_option) b.style.outline = '3px solid #00e676';
     });
-    if (payload.correct) {
-        duelResultBanner.className = 'winner-banner';
-        duelResultBanner.textContent = `COLPO CENTRATO! -${payload.damage} HP alla festeggiata!`;
-    } else if (payload.timeout) {
-        duelResultBanner.className = 'winner-banner';
+    duelResultBanner.className = 'winner-banner';
+    if (payload.outcome === 'challenger') {
+        duelResultBanner.style.background = '';
+        duelResultBanner.textContent = `${payload.winner_name} e' stato piu' veloce! -${payload.damage} HP alla festeggiata!`;
+    } else if (payload.outcome === 'boss') {
         duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
-        duelResultBanner.textContent = 'Tempo scaduto! Nessun danno.';
+        duelResultBanner.textContent = 'La Laureata ha risposto prima! Nessun danno.';
+    } else if (payload.outcome === 'timeout') {
+        duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
+        duelResultBanner.textContent = 'Tempo scaduto per entrambi! Nessun danno.';
     } else {
-        duelResultBanner.className = 'winner-banner';
         duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
-        duelResultBanner.textContent = 'Risposta sbagliata! Nessun danno.';
+        duelResultBanner.textContent = 'Nessuno ha risposto correttamente! Nessun danno.';
     }
 }
 

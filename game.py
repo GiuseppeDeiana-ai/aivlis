@@ -9,6 +9,9 @@ from typing import Optional
 DUEL_CATEGORIES = ["musica", "film", "videogioco", "data"]
 DUEL_DAMAGE = 25
 DUEL_WIN_BONUS_SCORE = 3
+BOSS_ID = "boss"
+PENANCE_HEAL = 10
+DEFAULT_PENANCE_LIMIT = 3
 
 
 class Phase(str, Enum):
@@ -31,9 +34,10 @@ class Guest:
 
 
 class GameState:
-    def __init__(self, questions_path: Path, duels_path: Path, max_hp: int = 100):
+    def __init__(self, questions_path: Path, duels_path: Path, penances_path: Path, max_hp: int = 100):
         self.questions = json.loads(Path(questions_path).read_text(encoding="utf-8"))
         self.duels: dict[str, list[dict]] = json.loads(Path(duels_path).read_text(encoding="utf-8"))
+        self.penances: list[str] = json.loads(Path(penances_path).read_text(encoding="utf-8"))
         self.round_index = -1
         self.phase = Phase.LOBBY
         self.boss_answer: Optional[int] = None
@@ -47,6 +51,12 @@ class GameState:
         self.challenger_id: Optional[str] = None
         self.duel_category: Optional[str] = None
         self.duel_challenge: Optional[dict] = None
+        self.duel_answers: dict[str, dict] = {}
+        self.duel_winner: Optional[str] = None
+
+        self.penance_limit: int = DEFAULT_PENANCE_LIMIT
+        self.penance_used: int = 0
+        self.used_penance_indices: set[int] = set()
 
     @property
     def current_question(self):
@@ -66,6 +76,8 @@ class GameState:
         self.challenger_id = None
         self.duel_category = None
         self.duel_challenge = None
+        self.duel_answers = {}
+        self.duel_winner = None
         return True
 
     def submit_boss_answer(self, choice: int) -> bool:
@@ -112,6 +124,10 @@ class GameState:
         self.challenger_id = None
         self.duel_category = None
         self.duel_challenge = None
+        self.duel_answers = {}
+        self.duel_winner = None
+        self.penance_used = 0
+        self.used_penance_indices = set()
 
     # ---- duel (scontro diretto) ----
 
@@ -119,6 +135,8 @@ class GameState:
         if self.phase != Phase.ROUND_RESULT or not self.winner_id:
             return False
         self.challenger_id = self.winner_id
+        self.duel_answers = {}
+        self.duel_winner = None
         self.phase = Phase.DUEL_WHEEL
         return True
 
@@ -128,6 +146,8 @@ class GameState:
         self.challenger_id = None
         self.duel_category = None
         self.duel_challenge = None
+        self.duel_answers = {}
+        self.duel_winner = None
         self.phase = Phase.ROUND_RESULT
         return True
 
@@ -146,27 +166,67 @@ class GameState:
         category = random.choice(DUEL_CATEGORIES)
         self.duel_category = category
         self.duel_challenge = self._pick_challenge(category)
+        self.duel_answers = {}
+        self.duel_winner = None
         return category
 
     def open_duel_challenge(self):
         self.phase = Phase.DUEL_CHALLENGE
 
-    def submit_duel_answer(self, guest_id: str, choice: int) -> Optional[bool]:
-        if self.phase != Phase.DUEL_CHALLENGE or guest_id != self.challenger_id:
+    def submit_duel_answer(self, responder_id: str, choice: int) -> Optional[bool]:
+        """Sia l'ospite sfidante che la festeggiata rispondono alla stessa sfida:
+        chi risponde correttamente per primo vince (se sbagliano entrambi, nessun danno)."""
+        if self.phase != Phase.DUEL_CHALLENGE:
             return None
+        if responder_id not in (self.challenger_id, BOSS_ID):
+            return None
+        if responder_id in self.duel_answers:
+            return None
+        self.duel_answers[responder_id] = {"choice": choice, "at": time.time()}
         correct = choice == self.duel_challenge["answer"]
-        if correct:
-            self.damage_boss(DUEL_DAMAGE)
-            if guest_id in self.guests:
-                self.guests[guest_id].score += DUEL_WIN_BONUS_SCORE
-        self.phase = Phase.DUEL_RESULT
+        if correct and self.duel_winner is None:
+            self.duel_winner = responder_id
+            self.phase = Phase.DUEL_RESULT
+            if responder_id == self.challenger_id:
+                self.damage_boss(DUEL_DAMAGE)
+                if responder_id in self.guests:
+                    self.guests[responder_id].score += DUEL_WIN_BONUS_SCORE
+        elif len(self.duel_answers) >= 2:
+            self.phase = Phase.DUEL_RESULT
         return correct
+
+    def duel_resolved(self) -> bool:
+        return self.phase == Phase.DUEL_RESULT
 
     def resolve_duel_timeout(self) -> bool:
         if self.phase != Phase.DUEL_CHALLENGE:
             return False
         self.phase = Phase.DUEL_RESULT
         return True
+
+    def public_duel_result(self, timeout: bool = False) -> dict:
+        c = self.duel_challenge
+        if timeout:
+            outcome = "timeout"
+        elif self.duel_winner is None:
+            outcome = "draw"
+        elif self.duel_winner == self.challenger_id:
+            outcome = "challenger"
+        else:
+            outcome = "boss"
+        winner_name = None
+        if outcome == "challenger" and self.challenger_id in self.guests:
+            winner_name = self.guests[self.challenger_id].name
+        elif outcome == "boss":
+            winner_name = "La Laureata"
+        return {
+            "outcome": outcome,
+            "winner_name": winner_name,
+            "correct_option": c["answer"],
+            "damage": DUEL_DAMAGE if outcome == "challenger" else 0,
+            "boss_choice": self.duel_answers.get(BOSS_ID, {}).get("choice"),
+            "challenger_choice": self.duel_answers.get(self.challenger_id, {}).get("choice") if self.challenger_id else None,
+        }
 
     def public_duel_challenge(self) -> Optional[dict]:
         c = self.duel_challenge
@@ -180,6 +240,43 @@ class GameState:
             "options": c["options"],
             "challenger_id": self.challenger_id,
             "challenger_name": self.guests[self.challenger_id].name if self.challenger_id in self.guests else "?",
+        }
+
+    # ---- ruota delle penitenze (il boss guadagna HP) ----
+
+    def set_penance_limit(self, limit: int) -> bool:
+        if limit < 0:
+            return False
+        self.penance_limit = limit
+        return True
+
+    def penance_remaining(self) -> int:
+        return max(0, self.penance_limit - self.penance_used)
+
+    def can_spin_penance(self) -> bool:
+        if self.phase in (Phase.DUEL_WHEEL, Phase.DUEL_CHALLENGE, Phase.GAME_OVER):
+            return False
+        return self.penance_remaining() > 0 and len(self.penances) > 0
+
+    def heal_boss(self, amount: int):
+        self.hp = min(self.max_hp, self.hp + amount)
+
+    def spin_penance_wheel(self) -> Optional[dict]:
+        if not self.can_spin_penance():
+            return None
+        pool = [i for i in range(len(self.penances)) if i not in self.used_penance_indices]
+        if not pool:
+            pool = list(range(len(self.penances)))
+            self.used_penance_indices = set()
+        index = random.choice(pool)
+        self.used_penance_indices.add(index)
+        self.penance_used += 1
+        self.heal_boss(PENANCE_HEAL)
+        return {
+            "index": index,
+            "text": self.penances[index],
+            "heal": PENANCE_HEAL,
+            "remaining": self.penance_remaining(),
         }
 
     def public_state(self) -> dict:
@@ -206,4 +303,8 @@ class GameState:
             )[:10],
             "challenger_name": challenger_name,
             "duel_category": self.duel_category,
+            "penance_limit": self.penance_limit,
+            "penance_used": self.penance_used,
+            "penance_remaining": self.penance_remaining(),
+            "penance_count": len(self.penances),
         }

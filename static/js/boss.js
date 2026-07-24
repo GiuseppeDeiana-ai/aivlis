@@ -17,12 +17,24 @@ const spinBtn = document.getElementById('spinBtn');
 const duelChallengeCard = document.getElementById('duelChallengeCard');
 const duelCategoryTitle = document.getElementById('duelCategoryTitle');
 const duelMedia = document.getElementById('duelMedia');
+const duelOptionsBox = document.getElementById('duelOptionsBox');
 const duelSpectatorNote = document.getElementById('duelSpectatorNote');
 const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
 
+const penanceCard = document.getElementById('penanceCard');
+const penanceWheelWrap = document.getElementById('penanceWheelWrap');
+const penanceRevealCard = document.getElementById('penanceRevealCard');
+const penanceRevealText = document.getElementById('penanceRevealText');
+const penanceRevealHeal = document.getElementById('penanceRevealHeal');
+const penanceSpinBtn = document.getElementById('penanceSpinBtn');
+const penanceStatusLine = document.getElementById('penanceStatusLine');
+
 let ws = null;
 let hasAnswered = false;
+let hasAnsweredDuel = false;
+let penanceSpinning = false;
+let lastPenanceCount = 0;
 
 function connect(key) {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -54,6 +66,7 @@ function handleMessage(msg) {
     if (msg.type === 'round_started') {
         hasAnswered = false;
         hideDuelScreen();
+        penanceCard.style.display = 'block';
         statusLine.textContent = `Domanda ${msg.payload.round}/${msg.payload.total} - rispondi tu per prima!`;
         questionText.textContent = msg.payload.text;
         optionsBox.innerHTML = '';
@@ -67,6 +80,7 @@ function handleMessage(msg) {
         questionCard.style.display = 'block';
     } else if (msg.type === 'duel_start') {
         questionCard.style.display = 'none';
+        penanceCard.style.display = 'none';
         duelScreen.style.display = 'block';
         duelChallengeCard.style.display = 'none';
         duelResultCard.style.display = 'none';
@@ -82,6 +96,7 @@ function handleMessage(msg) {
         wheelCard.style.display = 'none';
         duelResultCard.style.display = 'none';
         duelChallengeCard.style.display = 'block';
+        hasAnsweredDuel = false;
         duelCategoryTitle.textContent = `Indovina la ${categoryLabel(msg.payload.category).toLowerCase()}`;
         duelMedia.innerHTML = '';
         if (msg.payload.category === 'musica') {
@@ -100,29 +115,71 @@ function handleMessage(msg) {
             div.textContent = msg.payload.prompt;
             duelMedia.appendChild(div);
         }
-        duelSpectatorNote.textContent = `${msg.payload.challenger_name} sta rispondendo...`;
+        duelOptionsBox.innerHTML = '';
+        msg.payload.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option';
+            btn.textContent = opt;
+            btn.onclick = () => submitDuelAnswer(idx);
+            duelOptionsBox.appendChild(btn);
+        });
+        duelSpectatorNote.textContent = `Rispondi tu contro ${msg.payload.challenger_name}! Chi risponde correttamente prima vince!`;
+    } else if (msg.type === 'duel_answer_registered') {
+        if (msg.payload.by === 'challenger') {
+            duelSpectatorNote.textContent = 'Lo sfidante ha risposto! Sbrigati!';
+        }
     } else if (msg.type === 'duel_result') {
         duelResultCard.style.display = 'block';
-        if (msg.payload.correct) {
-            duelResultBanner.className = 'winner-banner';
+        Array.from(duelOptionsBox.children).forEach((b, idx) => {
+            b.disabled = true;
+            if (idx === msg.payload.correct_option) b.style.outline = '3px solid #00e676';
+        });
+        duelResultBanner.className = 'winner-banner';
+        if (msg.payload.outcome === 'boss') {
             duelResultBanner.style.background = '';
-            duelResultBanner.textContent = `Hai subito ${msg.payload.damage} danni!`;
-        } else if (msg.payload.timeout) {
-            duelResultBanner.className = 'winner-banner';
+            duelResultBanner.textContent = 'Hai risposto prima tu! Nessun danno!';
+        } else if (msg.payload.outcome === 'challenger') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
-            duelResultBanner.textContent = 'Tempo scaduto per lo sfidante, sei salva!';
+            duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! Hai subito ${msg.payload.damage} danni!`;
+        } else if (msg.payload.outcome === 'timeout') {
+            duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
+            duelResultBanner.textContent = 'Tempo scaduto per entrambi, sei salva!';
         } else {
-            duelResultBanner.className = 'winner-banner';
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
-            duelResultBanner.textContent = 'Risposta sbagliata, sei salva!';
+            duelResultBanner.textContent = 'Nessuno ha risposto correttamente, sei salva!';
         }
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
+        penanceCard.style.display = 'block';
         statusLine.textContent = 'Scontro diretto annullato dalla regia.';
+    } else if (msg.type === 'penance_spin') {
+        penanceSpinning = true;
+        penanceSpinBtn.disabled = true;
+        penanceRevealCard.style.display = 'none';
+        penanceWheelWrap.style.display = 'block';
+        lastPenanceCount = msg.payload.count;
+        buildPenanceWheel(penanceWheelWrap, msg.payload.count);
+        spinPenanceWheelTo(penanceWheelWrap, msg.payload.count, msg.payload.index);
+        penanceStatusLine.textContent = 'La ruota gira...';
+    } else if (msg.type === 'penance_result') {
+        penanceSpinning = false;
+        penanceRevealCard.style.display = 'block';
+        penanceRevealText.textContent = msg.payload.text;
+        penanceRevealHeal.textContent = `+${msg.payload.heal} HP! Penitenze rimaste: ${msg.payload.remaining}`;
+    } else if (msg.type === 'penance_denied') {
+        penanceStatusLine.textContent = msg.payload.remaining <= 0
+            ? 'Hai finito le penitenze disponibili.'
+            : 'Non puoi girare la ruota delle penitenze in questo momento.';
     } else if (msg.type === 'state') {
         const pct = Math.max(0, Math.min(100, (msg.payload.hp / msg.payload.max_hp) * 100));
         hpBar.style.width = pct + '%';
         hpLabel.textContent = `HP ${msg.payload.hp}/${msg.payload.max_hp}`;
+        lastPenanceCount = msg.payload.penance_count;
+        const canSpinPenance = !penanceSpinning
+            && msg.payload.penance_remaining > 0
+            && !['duel_wheel', 'duel_challenge', 'game_over'].includes(msg.payload.phase);
+        penanceSpinBtn.disabled = !canSpinPenance;
+        penanceSpinBtn.textContent = `Gira la ruota delle penitenze (rimaste: ${msg.payload.penance_remaining})`;
         if (msg.payload.phase === 'game_over') {
             statusLine.textContent = 'Sei stata sconfitta! Complimenti alla laurea!';
             questionCard.style.display = 'none';
@@ -133,6 +190,9 @@ function handleMessage(msg) {
     } else if (msg.type === 'reset') {
         questionCard.style.display = 'none';
         hideDuelScreen();
+        penanceCard.style.display = 'block';
+        penanceRevealCard.style.display = 'none';
+        penanceWheelWrap.style.display = 'none';
         statusLine.textContent = 'Il gioco e stato resettato.';
     }
 }
@@ -145,9 +205,22 @@ function submitAnswer(idx) {
     statusLine.textContent = 'Risposta inviata! Ora gli invitati possono rispondere.';
 }
 
+function submitDuelAnswer(idx) {
+    if (hasAnsweredDuel) return;
+    hasAnsweredDuel = true;
+    Array.from(duelOptionsBox.children).forEach(b => b.disabled = true);
+    ws.send(JSON.stringify({ type: 'duel_answer', choice: idx }));
+    duelSpectatorNote.textContent = 'Risposta inviata! Aspettiamo l\'esito...';
+}
+
 spinBtn.onclick = () => {
     spinBtn.disabled = true;
     ws.send(JSON.stringify({ type: 'spin_wheel' }));
+};
+
+penanceSpinBtn.onclick = () => {
+    penanceSpinBtn.disabled = true;
+    ws.send(JSON.stringify({ type: 'spin_penance' }));
 };
 
 enterBtn.onclick = () => {

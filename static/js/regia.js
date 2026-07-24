@@ -23,6 +23,15 @@ const duelSpectatorNote = document.getElementById('duelSpectatorNote');
 const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
 
+const penanceBadge = document.getElementById('penanceBadge');
+const penanceLimitInput = document.getElementById('penanceLimitInput');
+const setPenanceLimitBtn = document.getElementById('setPenanceLimitBtn');
+const penanceScreen = document.getElementById('penanceScreen');
+const penanceWheelWrap = document.getElementById('penanceWheelWrap');
+const penanceRevealBox = document.getElementById('penanceRevealBox');
+const penanceRevealText = document.getElementById('penanceRevealText');
+const penanceRevealHeal = document.getElementById('penanceRevealHeal');
+
 let ws = null;
 
 function connect(key) {
@@ -61,13 +70,28 @@ function handleMessage(msg) {
         onlineBadge.textContent = `${s.guests_online} online`;
         answersBadge.textContent = `${s.answers_count} risposte`;
         winnerLine.textContent = s.winner ? `Ultimo vincitore: ${s.winner}` : '';
+        penanceBadge.textContent = `penitenze: ${s.penance_used}/${s.penance_limit} (rimaste: ${s.penance_remaining})`;
+        if (document.activeElement !== penanceLimitInput) {
+            penanceLimitInput.value = s.penance_limit;
+        }
         leaderboard.innerHTML = '';
         s.leaderboard.forEach((row, i) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `<td>${i + 1}.</td><td>${row.name}</td><td>${row.score}</td>`;
             leaderboard.appendChild(tr);
         });
+    } else if (msg.type === 'penance_spin') {
+        penanceScreen.style.display = 'block';
+        penanceRevealBox.style.display = 'none';
+        penanceWheelWrap.style.display = 'block';
+        buildPenanceWheel(penanceWheelWrap, msg.payload.count);
+        spinPenanceWheelTo(penanceWheelWrap, msg.payload.count, msg.payload.index);
+    } else if (msg.type === 'penance_result') {
+        penanceRevealBox.style.display = 'block';
+        penanceRevealText.textContent = msg.payload.text;
+        penanceRevealHeal.textContent = `+${msg.payload.heal} HP alla festeggiata! Rimaste: ${msg.payload.remaining}`;
     } else if (msg.type === 'duel_start') {
+        penanceScreen.style.display = 'none';
         duelScreen.style.display = 'block';
         duelChallengeCard.style.display = 'none';
         duelResultCard.style.display = 'none';
@@ -111,29 +135,35 @@ function handleMessage(msg) {
             btn.disabled = true;
             duelOptionsBox.appendChild(btn);
         });
-        duelSpectatorNote.textContent = `${msg.payload.challenger_name} sta rispondendo...`;
+        duelSpectatorNote.textContent = `${msg.payload.challenger_name} vs La Laureata: chi risponde prima correttamente vince!`;
+    } else if (msg.type === 'duel_answer_registered') {
+        duelSpectatorNote.textContent = msg.payload.by === 'boss'
+            ? 'La festeggiata ha risposto!'
+            : 'Lo sfidante ha risposto!';
     } else if (msg.type === 'duel_result') {
         duelResultCard.style.display = 'block';
         Array.from(duelOptionsBox.children).forEach((b, idx) => {
             if (idx === msg.payload.correct_option) b.style.outline = '3px solid #00e676';
         });
-        if (msg.payload.correct) {
-            duelResultBanner.className = 'winner-banner';
+        duelResultBanner.className = 'winner-banner';
+        if (msg.payload.outcome === 'challenger') {
             duelResultBanner.style.background = '';
-            duelResultBanner.textContent = `COLPO CENTRATO! -${msg.payload.damage} HP alla festeggiata!`;
-        } else if (msg.payload.timeout) {
-            duelResultBanner.className = 'winner-banner';
+            duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! -${msg.payload.damage} HP alla festeggiata!`;
+        } else if (msg.payload.outcome === 'boss') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
-            duelResultBanner.textContent = 'Tempo scaduto, nessun danno.';
+            duelResultBanner.textContent = 'La Laureata ha risposto prima! Nessun danno.';
+        } else if (msg.payload.outcome === 'timeout') {
+            duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
+            duelResultBanner.textContent = 'Tempo scaduto per entrambi, nessun danno.';
         } else {
-            duelResultBanner.className = 'winner-banner';
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
-            duelResultBanner.textContent = 'Risposta sbagliata, nessun danno.';
+            duelResultBanner.textContent = 'Nessuno ha risposto correttamente, nessun danno.';
         }
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
     } else if (msg.type === 'reset') {
         hideDuelScreen();
+        penanceScreen.style.display = 'none';
     }
 }
 
@@ -143,6 +173,12 @@ document.getElementById('cancelDuelBtn').onclick = () => ws.send(JSON.stringify(
 document.getElementById('dmg10').onclick = () => ws.send(JSON.stringify({ type: 'damage_boss', amount: 10 }));
 document.getElementById('dmg25').onclick = () => ws.send(JSON.stringify({ type: 'damage_boss', amount: 25 }));
 document.getElementById('dmg100').onclick = () => ws.send(JSON.stringify({ type: 'damage_boss', amount: 100 }));
+setPenanceLimitBtn.onclick = () => {
+    const limit = parseInt(penanceLimitInput.value, 10);
+    if (Number.isNaN(limit) || limit < 0) return;
+    ws.send(JSON.stringify({ type: 'set_penance_limit', limit }));
+};
+
 document.getElementById('resetBtn').onclick = () => {
     if (confirm('Sicuro di voler resettare la partita?')) {
         ws.send(JSON.stringify({ type: 'reset' }));

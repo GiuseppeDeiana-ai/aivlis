@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from game import DUEL_DAMAGE, GameState
+from game import BOSS_ID, GameState
 
 BASE_DIR = Path(__file__).parent
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "regia123")
@@ -24,7 +24,7 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-game = GameState(BASE_DIR / "questions.json", BASE_DIR / "duels.json")
+game = GameState(BASE_DIR / "questions.json", BASE_DIR / "duels.json", BASE_DIR / "penitenze.json")
 duel_timeout_task: asyncio.Task | None = None
 
 
@@ -79,11 +79,18 @@ async def run_duel_timeout():
     except asyncio.CancelledError:
         return
     if game.resolve_duel_timeout():
-        await hub.to_all({
-            "type": "duel_result",
-            "payload": {"correct": False, "timeout": True, "correct_option": game.duel_challenge["answer"], "damage": 0},
-        })
+        await hub.to_all({"type": "duel_result", "payload": game.public_duel_result(timeout=True)})
         await broadcast_state()
+
+
+async def run_penance_sequence():
+    result = game.spin_penance_wheel()
+    if result is None:
+        return
+    await hub.to_all({"type": "penance_spin", "payload": {"index": result["index"], "count": len(game.penances)}})
+    await asyncio.sleep(WHEEL_SPIN_SECONDS)
+    await hub.to_all({"type": "penance_result", "payload": result})
+    await broadcast_state()
 
 
 async def run_wheel_sequence():
@@ -151,18 +158,12 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                 choice = int(data["choice"])
                 result = game.submit_duel_answer(guest_id, choice)
                 if result is not None:
-                    cancel_duel_timeout()
-                    await hub.to_all({
-                        "type": "duel_result",
-                        "payload": {
-                            "correct": result,
-                            "timeout": False,
-                            "correct_option": game.duel_challenge["answer"],
-                            "damage": DUEL_DAMAGE if result else 0,
-                            "by": guest_name,
-                        },
-                    })
-                    await broadcast_state()
+                    if game.duel_resolved():
+                        cancel_duel_timeout()
+                        await hub.to_all({"type": "duel_result", "payload": game.public_duel_result()})
+                        await broadcast_state()
+                    else:
+                        await hub.to_all({"type": "duel_answer_registered", "payload": {"by": "challenger"}})
     except WebSocketDisconnect:
         if guest_id in game.guests:
             game.guests[guest_id].connected = False
@@ -190,6 +191,21 @@ async def ws_boss(websocket: WebSocket, key: str = ""):
                     await broadcast_state()
             elif t == "spin_wheel":
                 asyncio.create_task(run_wheel_sequence())
+            elif t == "spin_penance":
+                if game.can_spin_penance():
+                    asyncio.create_task(run_penance_sequence())
+                else:
+                    await hub._send(websocket, {"type": "penance_denied", "payload": {"remaining": game.penance_remaining()}})
+            elif t == "duel_answer":
+                choice = int(data["choice"])
+                result = game.submit_duel_answer(BOSS_ID, choice)
+                if result is not None:
+                    if game.duel_resolved():
+                        cancel_duel_timeout()
+                        await hub.to_all({"type": "duel_result", "payload": game.public_duel_result()})
+                        await broadcast_state()
+                    else:
+                        await hub.to_all({"type": "duel_answer_registered", "payload": {"by": "boss"}})
     except WebSocketDisconnect:
         hub.boss.discard(websocket)
 
@@ -223,6 +239,9 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 cancel_duel_timeout()
                 if game.cancel_duel():
                     await hub.to_all({"type": "duel_cancelled", "payload": {}})
+                await broadcast_state()
+            elif t == "set_penance_limit":
+                game.set_penance_limit(int(data.get("limit", 3)))
                 await broadcast_state()
             elif t == "damage_boss":
                 game.damage_boss(int(data.get("amount", 10)))
