@@ -121,6 +121,10 @@ function handleMessage(msg) {
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
         statusLine.textContent = 'Scontro diretto annullato dalla regia.';
+    } else if (msg.type === 'return_home') {
+        hideDuelScreen();
+        winnerBanner.style.display = 'none';
+        statusLine.textContent = 'In attesa della prossima domanda...';
     } else if (msg.type === 'penance_spin') {
         penanceScreen.style.display = 'block';
         penanceRevealBox.style.display = 'none';

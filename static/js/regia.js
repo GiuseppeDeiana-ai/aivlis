@@ -32,7 +32,21 @@ const penanceRevealBox = document.getElementById('penanceRevealBox');
 const penanceRevealText = document.getElementById('penanceRevealText');
 const penanceRevealHeal = document.getElementById('penanceRevealHeal');
 
+const logPanel = document.getElementById('logPanel');
+const MAX_LOG_ENTRIES = 60;
+
 let ws = null;
+
+function addLogEntry(ts, text) {
+    const time = new Date(ts * 1000).toLocaleTimeString('it-IT');
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.innerHTML = `<span class="log-time">${time}</span>${text}`;
+    logPanel.insertBefore(div, logPanel.firstChild);
+    while (logPanel.children.length > MAX_LOG_ENTRIES) {
+        logPanel.removeChild(logPanel.lastChild);
+    }
+}
 
 function connect(key) {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -60,7 +74,12 @@ function hideDuelScreen() {
 }
 
 function handleMessage(msg) {
-    if (msg.type === 'state') {
+    if (msg.type === 'log') {
+        addLogEntry(msg.payload.ts, msg.payload.text);
+    } else if (msg.type === 'return_home') {
+        hideDuelScreen();
+        penanceScreen.style.display = 'none';
+    } else if (msg.type === 'state') {
         const s = msg.payload;
         const pct = Math.max(0, Math.min(100, (s.hp / s.max_hp) * 100));
         hpBar.style.width = pct + '%';

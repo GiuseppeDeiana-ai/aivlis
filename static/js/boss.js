@@ -152,6 +152,10 @@ function handleMessage(msg) {
         hideDuelScreen();
         penanceCard.style.display = 'block';
         statusLine.textContent = 'Scontro diretto annullato dalla regia.';
+    } else if (msg.type === 'return_home') {
+        hideDuelScreen();
+        penanceCard.style.display = 'block';
+        statusLine.textContent = 'Scontro terminato! Gira la ruota delle penitenze o aspetta la prossima domanda dalla regia.';
     } else if (msg.type === 'penance_spin') {
         penanceSpinning = true;
         penanceSpinBtn.disabled = true;

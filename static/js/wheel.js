@@ -44,6 +44,11 @@ function spinWheelToIndexGeneric(container, count, index) {
     const disc = container.querySelector("#wheelDiscInner");
     if (!disc) return;
     const deg = angleForIndexGeneric(count, index);
+    // Forza un reflow cosi' il browser "registra" lo stato di partenza (rotate(0deg))
+    // prima di applicare la transizione: senza questo, se build+spin avvengono nello
+    // stesso tick (es. ruota penitenze), il browser accorpa i due cambi di stile e
+    // la ruota salta direttamente al risultato finale senza animarsi.
+    disc.getBoundingClientRect();
     disc.style.transition = `transform ${WHEEL_SPIN_SECONDS_JS}s cubic-bezier(0.22, 0.61, 0.36, 1)`;
     disc.style.transform = `rotate(${deg}deg)`;
 }

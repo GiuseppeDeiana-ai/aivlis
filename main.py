@@ -2,6 +2,7 @@ import asyncio
 import io
 import os
 import secrets
+import time
 from pathlib import Path
 
 import qrcode
@@ -19,6 +20,7 @@ PUBLIC_URL = os.environ.get("PUBLIC_URL", "")
 
 WHEEL_SPIN_SECONDS = 3.0  # must match the CSS transition duration in static/js/wheel.js
 DUEL_TIMEOUT_SECONDS = 20.0
+RETURN_HOME_SECONDS = 5.0  # quanto restare sulla schermata di risultato prima di tornare alla home
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -62,8 +64,18 @@ class Hub:
 hub = Hub()
 
 
+async def log(text: str):
+    """Log visibile solo alla regia, per capire cosa succede in tempo reale."""
+    await hub.to_regia({"type": "log", "payload": {"ts": time.time(), "text": text}})
+
+
 async def broadcast_state():
     await hub.to_all({"type": "state", "payload": game.public_state()})
+
+
+async def check_game_over():
+    if game.hp <= 0:
+        await log("💀 La festeggiata e' stata sconfitta! Game over.")
 
 
 def cancel_duel_timeout():
@@ -73,24 +85,47 @@ def cancel_duel_timeout():
         duel_timeout_task = None
 
 
+async def broadcast_duel_result(payload: dict):
+    await hub.to_all({"type": "duel_result", "payload": payload})
+    await broadcast_state()
+    outcome = payload["outcome"]
+    if outcome == "challenger":
+        await log(f"⚔️ Scontro vinto da {payload['winner_name']}! -{payload['damage']} HP alla festeggiata.")
+    elif outcome == "boss":
+        await log("⚔️ La festeggiata ha risposto prima! Nessun danno.")
+    elif outcome == "timeout":
+        await log("⚔️ Tempo scaduto nello scontro diretto, nessun danno.")
+    else:
+        await log("⚔️ Nessuno ha risposto correttamente allo scontro, nessun danno.")
+    await check_game_over()
+    asyncio.create_task(run_return_home())
+
+
+async def run_return_home():
+    await asyncio.sleep(RETURN_HOME_SECONDS)
+    await hub.to_all({"type": "return_home", "payload": {}})
+    await log("🏠 Tutti sono tornati alla home. Puoi far girare la ruota delle penitenze o avviare la prossima domanda.")
+
+
 async def run_duel_timeout():
     try:
         await asyncio.sleep(DUEL_TIMEOUT_SECONDS)
     except asyncio.CancelledError:
         return
     if game.resolve_duel_timeout():
-        await hub.to_all({"type": "duel_result", "payload": game.public_duel_result(timeout=True)})
-        await broadcast_state()
+        await broadcast_duel_result(game.public_duel_result(timeout=True))
 
 
 async def run_penance_sequence():
     result = game.spin_penance_wheel()
     if result is None:
         return
+    await log("🎡 La festeggiata gira la ruota delle penitenze...")
     await hub.to_all({"type": "penance_spin", "payload": {"index": result["index"], "count": len(game.penances)}})
     await asyncio.sleep(WHEEL_SPIN_SECONDS)
     await hub.to_all({"type": "penance_result", "payload": result})
     await broadcast_state()
+    await log(f"❤️ Penitenza: \"{result['text']}\" — +{result['heal']} HP (rimaste: {result['remaining']})")
 
 
 async def run_wheel_sequence():
@@ -98,11 +133,13 @@ async def run_wheel_sequence():
     category = game.spin_wheel()
     if category is None:
         return
+    await log(f"🎡 Ruota dello scontro girata: categoria \"{category}\"")
     await hub.to_all({"type": "wheel_result", "payload": {"category": category}})
     await asyncio.sleep(WHEEL_SPIN_SECONDS)
     game.open_duel_challenge()
     await hub.to_all({"type": "duel_challenge", "payload": game.public_duel_challenge()})
     await broadcast_state()
+    await log("🎯 Sfida rivelata, in attesa delle risposte...")
     duel_timeout_task = asyncio.create_task(run_duel_timeout())
 
 
@@ -139,6 +176,7 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
     game.add_guest(guest_id, guest_name)
     hub.guests[guest_id] = websocket
     await hub._send(websocket, {"type": "welcome", "payload": {"guest_id": guest_id, "name": guest_name}})
+    await log(f"👤 {guest_name} si e' connesso ({len(hub.guests)} online)")
     await broadcast_state()
     try:
         while True:
@@ -153,6 +191,9 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                     await hub._send(websocket, {"type": "answer_ack", "payload": {"status": "correct" if result else "wrong"}})
                     if result:
                         await hub.to_all({"type": "winner", "payload": {"name": guest_name, "guest_id": guest_id}})
+                        await log(f"🏆 {guest_name} ha indovinato per primo! Pronto per lo scontro diretto.")
+                    else:
+                        await log(f"❌ {guest_name} ha risposto, ma diverso dalla festeggiata.")
                     await broadcast_state()
             elif t == "duel_answer":
                 choice = int(data["choice"])
@@ -160,14 +201,15 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                 if result is not None:
                     if game.duel_resolved():
                         cancel_duel_timeout()
-                        await hub.to_all({"type": "duel_result", "payload": game.public_duel_result()})
-                        await broadcast_state()
+                        await broadcast_duel_result(game.public_duel_result())
                     else:
                         await hub.to_all({"type": "duel_answer_registered", "payload": {"by": "challenger"}})
+                        await log(f"✍️ {guest_name} (sfidante) ha risposto, in attesa della festeggiata...")
     except WebSocketDisconnect:
         if guest_id in game.guests:
             game.guests[guest_id].connected = False
         hub.guests.pop(guest_id, None)
+        await log(f"👤 {guest_name} si e' disconnesso")
         await broadcast_state()
 
 
@@ -178,6 +220,7 @@ async def ws_boss(websocket: WebSocket, key: str = ""):
         return
     await websocket.accept()
     hub.boss.add(websocket)
+    await log("👑 La festeggiata si e' connessa")
     await broadcast_state()
     try:
         while True:
@@ -188,6 +231,7 @@ async def ws_boss(websocket: WebSocket, key: str = ""):
                 if ok:
                     q = game.current_question
                     await hub.to_guests({"type": "round_open", "payload": {"text": q["text"], "options": q["options"]}})
+                    await log(f"👑 La festeggiata ha risposto alla domanda {game.round_index + 1}. Ora rispondono gli invitati.")
                     await broadcast_state()
             elif t == "spin_wheel":
                 asyncio.create_task(run_wheel_sequence())
@@ -196,18 +240,20 @@ async def ws_boss(websocket: WebSocket, key: str = ""):
                     asyncio.create_task(run_penance_sequence())
                 else:
                     await hub._send(websocket, {"type": "penance_denied", "payload": {"remaining": game.penance_remaining()}})
+                    await log(f"🚫 Tentativo di girare la ruota penitenze negato (rimaste: {game.penance_remaining()})")
             elif t == "duel_answer":
                 choice = int(data["choice"])
                 result = game.submit_duel_answer(BOSS_ID, choice)
                 if result is not None:
                     if game.duel_resolved():
                         cancel_duel_timeout()
-                        await hub.to_all({"type": "duel_result", "payload": game.public_duel_result()})
-                        await broadcast_state()
+                        await broadcast_duel_result(game.public_duel_result())
                     else:
                         await hub.to_all({"type": "duel_answer_registered", "payload": {"by": "boss"}})
+                        await log("✍️ La festeggiata ha risposto, in attesa dello sfidante...")
     except WebSocketDisconnect:
         hub.boss.discard(websocket)
+        await log("👑 La festeggiata si e' disconnessa")
 
 
 @app.websocket("/ws/regia")
@@ -230,27 +276,41 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                         "payload": {"text": q["text"], "options": q["options"], "round": game.round_index + 1, "total": len(game.questions)},
                     })
                     await hub.to_guests({"type": "wait_boss", "payload": {}})
+                    await log(f"▶️ Domanda {game.round_index + 1}/{len(game.questions)} avviata.")
+                else:
+                    await log("ℹ️ Non ci sono altre domande da avviare.")
                 await broadcast_state()
             elif t == "start_duel":
                 if game.start_duel():
-                    await hub.to_all({"type": "duel_start", "payload": {"challenger_name": game.guests[game.challenger_id].name}})
+                    challenger_name = game.guests[game.challenger_id].name
+                    await hub.to_all({"type": "duel_start", "payload": {"challenger_name": challenger_name}})
+                    await log(f"⚔️ Scontro diretto avviato: {challenger_name} vs la festeggiata.")
+                else:
+                    await log("🚫 Impossibile avviare lo scontro: nessun vincitore in attesa.")
                 await broadcast_state()
             elif t == "cancel_duel":
                 cancel_duel_timeout()
                 if game.cancel_duel():
                     await hub.to_all({"type": "duel_cancelled", "payload": {}})
+                    await log("🚫 Scontro diretto annullato dalla regia.")
                 await broadcast_state()
             elif t == "set_penance_limit":
-                game.set_penance_limit(int(data.get("limit", 3)))
+                limit = int(data.get("limit", 3))
+                game.set_penance_limit(limit)
+                await log(f"⚙️ Limite penitenze impostato a {limit}.")
                 await broadcast_state()
             elif t == "damage_boss":
-                game.damage_boss(int(data.get("amount", 10)))
-                await hub.to_all({"type": "boss_hit", "payload": {"amount": int(data.get("amount", 10))}})
+                amount = int(data.get("amount", 10))
+                game.damage_boss(amount)
+                await hub.to_all({"type": "boss_hit", "payload": {"amount": amount}})
+                await log(f"💥 Danno manuale dalla regia: -{amount} HP.")
+                await check_game_over()
                 await broadcast_state()
             elif t == "reset":
                 cancel_duel_timeout()
                 game.reset()
                 await hub.to_all({"type": "reset", "payload": {}})
+                await log("🔄 Partita resettata dalla regia.")
                 await broadcast_state()
     except WebSocketDisconnect:
         hub.regia.discard(websocket)

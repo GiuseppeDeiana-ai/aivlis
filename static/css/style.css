@@ -200,3 +200,26 @@ table.leaderboard td {
 
 #duelMedia img { max-width: 100%; border-radius: 10px; display: block; margin: 0 auto 10px; }
 #duelMedia audio { width: 100%; margin: 10px 0; }
+
+.log-panel {
+    height: 220px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.8rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.log-entry {
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: #d8d3f0;
+}
+
+.log-entry .log-time {
+    color: #9d4edd;
+    margin-right: 6px;
+}
