@@ -8,8 +8,13 @@ const questionText = document.getElementById('questionText');
 const optionsBox = document.getElementById('optionsBox');
 const winnerBanner = document.getElementById('winnerBanner');
 const hpBar = document.getElementById('hpBar');
+const hpBarWrap = document.getElementById('hpBarWrap');
 const hpLabel = document.getElementById('hpLabel');
 const leaderboard = document.getElementById('leaderboard');
+const bossPortrait = document.getElementById('bossPortrait');
+const bossPortraitImg = document.getElementById('bossPortraitImg');
+
+startPortraitRotation(bossPortraitImg);
 
 const duelScreen = document.getElementById('duelScreen');
 const duelChallengerLine = document.getElementById('duelChallengerLine');
@@ -118,6 +123,13 @@ function handleMessage(msg) {
         }
     } else if (msg.type === 'duel_result') {
         showDuelResult(msg.payload);
+        if (msg.payload.outcome === 'challenger') {
+            pulseShake(bossPortrait);
+            pulseHpFlash(hpBar, hpBarWrap, 'damage');
+        }
+    } else if (msg.type === 'boss_hit') {
+        pulseShake(bossPortrait);
+        pulseHpFlash(hpBar, hpBarWrap, 'damage');
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
         statusLine.textContent = 'Scontro diretto annullato dalla regia.';
@@ -132,9 +144,12 @@ function handleMessage(msg) {
         buildPenanceWheel(penanceWheelWrap, msg.payload.count);
         spinPenanceWheelTo(penanceWheelWrap, msg.payload.count, msg.payload.index);
     } else if (msg.type === 'penance_result') {
+        penanceWheelWrap.style.display = 'none';
         penanceRevealBox.style.display = 'block';
         penanceRevealText.textContent = msg.payload.text;
         penanceRevealHeal.textContent = `+${msg.payload.heal} HP alla festeggiata!`;
+        pulseHeal(bossPortrait);
+        pulseHpFlash(hpBar, hpBarWrap, 'heal');
     } else if (msg.type === 'state') {
         updateState(msg.payload);
     } else if (msg.type === 'reset') {

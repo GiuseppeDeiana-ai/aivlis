@@ -3,7 +3,13 @@ const panel = document.getElementById('panel');
 const keyInput = document.getElementById('keyInput');
 const enterBtn = document.getElementById('enterBtn');
 const hpBar = document.getElementById('hpBar');
+const hpBarWrap = document.getElementById('hpBarWrap');
 const hpLabel = document.getElementById('hpLabel');
+const bossPortrait = document.getElementById('bossPortrait');
+const bossPortraitImg = document.getElementById('bossPortraitImg');
+
+startPortraitRotation(bossPortraitImg);
+
 const phaseBadge = document.getElementById('phaseBadge');
 const roundBadge = document.getElementById('roundBadge');
 const onlineBadge = document.getElementById('onlineBadge');
@@ -106,9 +112,12 @@ function handleMessage(msg) {
         buildPenanceWheel(penanceWheelWrap, msg.payload.count);
         spinPenanceWheelTo(penanceWheelWrap, msg.payload.count, msg.payload.index);
     } else if (msg.type === 'penance_result') {
+        penanceWheelWrap.style.display = 'none';
         penanceRevealBox.style.display = 'block';
         penanceRevealText.textContent = msg.payload.text;
         penanceRevealHeal.textContent = `+${msg.payload.heal} HP alla festeggiata! Rimaste: ${msg.payload.remaining}`;
+        pulseHeal(bossPortrait);
+        pulseHpFlash(hpBar, hpBarWrap, 'heal');
     } else if (msg.type === 'duel_start') {
         penanceScreen.style.display = 'none';
         duelScreen.style.display = 'block';
@@ -168,6 +177,8 @@ function handleMessage(msg) {
         if (msg.payload.outcome === 'challenger') {
             duelResultBanner.style.background = '';
             duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! -${msg.payload.damage} HP alla festeggiata!`;
+            pulseShake(bossPortrait);
+            pulseHpFlash(hpBar, hpBarWrap, 'damage');
         } else if (msg.payload.outcome === 'boss') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'La Laureata ha risposto prima! Nessun danno.';
@@ -178,6 +189,9 @@ function handleMessage(msg) {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'Nessuno ha risposto correttamente, nessun danno.';
         }
+    } else if (msg.type === 'boss_hit') {
+        pulseShake(bossPortrait);
+        pulseHpFlash(hpBar, hpBarWrap, 'damage');
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
     } else if (msg.type === 'reset') {

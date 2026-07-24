@@ -24,6 +24,7 @@ RETURN_HOME_SECONDS = 5.0  # quanto restare sulla schermata di risultato prima d
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+app.mount("/resources", StaticFiles(directory=str(BASE_DIR / "resources")), name="resources")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 game = GameState(BASE_DIR / "questions.json", BASE_DIR / "duels.json", BASE_DIR / "penitenze.json")

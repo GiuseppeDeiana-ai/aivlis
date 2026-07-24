@@ -7,7 +7,12 @@ const questionCard = document.getElementById('questionCard');
 const questionText = document.getElementById('questionText');
 const optionsBox = document.getElementById('optionsBox');
 const hpBar = document.getElementById('hpBar');
+const hpBarWrap = document.getElementById('hpBarWrap');
 const hpLabel = document.getElementById('hpLabel');
+const bossPortrait = document.getElementById('bossPortrait');
+const bossPortraitImg = document.getElementById('bossPortraitImg');
+
+startPortraitRotation(bossPortraitImg);
 
 const duelScreen = document.getElementById('duelScreen');
 const duelChallengerLine = document.getElementById('duelChallengerLine');
@@ -141,6 +146,8 @@ function handleMessage(msg) {
         } else if (msg.payload.outcome === 'challenger') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! Hai subito ${msg.payload.damage} danni!`;
+            pulseShake(bossPortrait);
+            pulseHpFlash(hpBar, hpBarWrap, 'damage');
         } else if (msg.payload.outcome === 'timeout') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'Tempo scaduto per entrambi, sei salva!';
@@ -167,9 +174,12 @@ function handleMessage(msg) {
         penanceStatusLine.textContent = 'La ruota gira...';
     } else if (msg.type === 'penance_result') {
         penanceSpinning = false;
+        penanceWheelWrap.style.display = 'none';
         penanceRevealCard.style.display = 'block';
         penanceRevealText.textContent = msg.payload.text;
         penanceRevealHeal.textContent = `+${msg.payload.heal} HP! Penitenze rimaste: ${msg.payload.remaining}`;
+        pulseHeal(bossPortrait);
+        pulseHpFlash(hpBar, hpBarWrap, 'heal');
     } else if (msg.type === 'penance_denied') {
         penanceStatusLine.textContent = msg.payload.remaining <= 0
             ? 'Hai finito le penitenze disponibili.'
@@ -191,6 +201,8 @@ function handleMessage(msg) {
         }
     } else if (msg.type === 'boss_hit') {
         statusLine.textContent = `Hai subito ${msg.payload.amount} danni!`;
+        pulseShake(bossPortrait);
+        pulseHpFlash(hpBar, hpBarWrap, 'damage');
     } else if (msg.type === 'reset') {
         questionCard.style.display = 'none';
         hideDuelScreen();
