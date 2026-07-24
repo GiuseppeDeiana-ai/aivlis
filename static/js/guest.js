@@ -3,6 +3,7 @@ const gameScreen = document.getElementById('gameScreen');
 const nameInput = document.getElementById('nameInput');
 const joinBtn = document.getElementById('joinBtn');
 const statusLine = document.getElementById('statusLine');
+const lobbyCard = document.getElementById('lobbyCard');
 const questionCard = document.getElementById('questionCard');
 const questionText = document.getElementById('questionText');
 const optionsBox = document.getElementById('optionsBox');
@@ -293,6 +294,7 @@ function updateState(state) {
     const pct = Math.max(0, Math.min(100, (state.hp / state.max_hp) * 100));
     hpBar.style.width = pct + '%';
     hpLabel.textContent = `HP ${state.hp}/${state.max_hp}`;
+    lobbyCard.style.display = state.phase === 'lobby' ? 'block' : 'none';
     if (state.phase === 'game_over') {
         statusLine.textContent = 'La laureata e stata sconfitta! Complimenti a tutti!';
         if (!gameOverShown) {

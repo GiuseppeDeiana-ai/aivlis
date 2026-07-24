@@ -3,6 +3,7 @@ const gameScreen = document.getElementById('gameScreen');
 const keyInput = document.getElementById('keyInput');
 const enterBtn = document.getElementById('enterBtn');
 const statusLine = document.getElementById('statusLine');
+const lobbyCard = document.getElementById('lobbyCard');
 const questionCard = document.getElementById('questionCard');
 const questionText = document.getElementById('questionText');
 const optionsBox = document.getElementById('optionsBox');
@@ -204,6 +205,7 @@ function handleMessage(msg) {
         const pct = Math.max(0, Math.min(100, (msg.payload.hp / msg.payload.max_hp) * 100));
         hpBar.style.width = pct + '%';
         hpLabel.textContent = `HP ${msg.payload.hp}/${msg.payload.max_hp}`;
+        lobbyCard.style.display = msg.payload.phase === 'lobby' ? 'block' : 'none';
         lastPenanceCount = msg.payload.penance_count;
         const canSpinPenance = !penanceSpinning
             && msg.payload.penance_remaining > 0

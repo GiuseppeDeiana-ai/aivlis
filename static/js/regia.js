@@ -10,6 +10,7 @@ const bossPortraitImg = document.getElementById('bossPortraitImg');
 
 startPortraitRotation(bossPortraitImg);
 
+const lobbyCard = document.getElementById('lobbyCard');
 const phaseBadge = document.getElementById('phaseBadge');
 const roundBadge = document.getElementById('roundBadge');
 const onlineBadge = document.getElementById('onlineBadge');
@@ -95,6 +96,7 @@ function handleMessage(msg) {
         hpBar.style.width = pct + '%';
         hpLabel.textContent = `HP ${s.hp}/${s.max_hp}`;
         phaseBadge.textContent = `fase: ${s.phase}`;
+        lobbyCard.style.display = s.phase === 'lobby' ? 'block' : 'none';
         roundBadge.textContent = `round ${s.round}/${s.total_rounds}`;
         onlineBadge.textContent = `${s.guests_online} online`;
         answersBadge.textContent = `${s.answers_count} risposte`;
