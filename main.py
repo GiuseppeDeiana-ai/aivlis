@@ -1,3 +1,4 @@
+import asyncio
 import io
 import os
 import secrets
@@ -9,18 +10,22 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from game import GameState
+from game import DUEL_DAMAGE, GameState
 
 BASE_DIR = Path(__file__).parent
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "regia123")
 BOSS_KEY = os.environ.get("BOSS_KEY", "boss123")
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "")
 
+WHEEL_SPIN_SECONDS = 3.0  # must match the CSS transition duration in static/js/wheel.js
+DUEL_TIMEOUT_SECONDS = 20.0
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-game = GameState(BASE_DIR / "questions.json")
+game = GameState(BASE_DIR / "questions.json", BASE_DIR / "duels.json")
+duel_timeout_task: asyncio.Task | None = None
 
 
 class Hub:
@@ -61,6 +66,39 @@ async def broadcast_state():
     await hub.to_all({"type": "state", "payload": game.public_state()})
 
 
+def cancel_duel_timeout():
+    global duel_timeout_task
+    if duel_timeout_task is not None:
+        duel_timeout_task.cancel()
+        duel_timeout_task = None
+
+
+async def run_duel_timeout():
+    try:
+        await asyncio.sleep(DUEL_TIMEOUT_SECONDS)
+    except asyncio.CancelledError:
+        return
+    if game.resolve_duel_timeout():
+        await hub.to_all({
+            "type": "duel_result",
+            "payload": {"correct": False, "timeout": True, "correct_option": game.duel_challenge["answer"], "damage": 0},
+        })
+        await broadcast_state()
+
+
+async def run_wheel_sequence():
+    global duel_timeout_task
+    category = game.spin_wheel()
+    if category is None:
+        return
+    await hub.to_all({"type": "wheel_result", "payload": {"category": category}})
+    await asyncio.sleep(WHEEL_SPIN_SECONDS)
+    game.open_duel_challenge()
+    await hub.to_all({"type": "duel_challenge", "payload": game.public_duel_challenge()})
+    await broadcast_state()
+    duel_timeout_task = asyncio.create_task(run_duel_timeout())
+
+
 @app.get("/", response_class=HTMLResponse)
 def guest_page(request: Request):
     return templates.TemplateResponse("guest.html", {"request": request})
@@ -98,7 +136,8 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
     try:
         while True:
             data = await websocket.receive_json()
-            if data.get("type") == "answer":
+            t = data.get("type")
+            if t == "answer":
                 choice = int(data["choice"])
                 result = game.submit_guest_answer(guest_id, choice)
                 if result is None:
@@ -107,6 +146,22 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                     await hub._send(websocket, {"type": "answer_ack", "payload": {"status": "correct" if result else "wrong"}})
                     if result:
                         await hub.to_all({"type": "winner", "payload": {"name": guest_name, "guest_id": guest_id}})
+                    await broadcast_state()
+            elif t == "duel_answer":
+                choice = int(data["choice"])
+                result = game.submit_duel_answer(guest_id, choice)
+                if result is not None:
+                    cancel_duel_timeout()
+                    await hub.to_all({
+                        "type": "duel_result",
+                        "payload": {
+                            "correct": result,
+                            "timeout": False,
+                            "correct_option": game.duel_challenge["answer"],
+                            "damage": DUEL_DAMAGE if result else 0,
+                            "by": guest_name,
+                        },
+                    })
                     await broadcast_state()
     except WebSocketDisconnect:
         if guest_id in game.guests:
@@ -126,12 +181,15 @@ async def ws_boss(websocket: WebSocket, key: str = ""):
     try:
         while True:
             data = await websocket.receive_json()
-            if data.get("type") == "answer":
+            t = data.get("type")
+            if t == "answer":
                 ok = game.submit_boss_answer(int(data["choice"]))
                 if ok:
                     q = game.current_question
                     await hub.to_guests({"type": "round_open", "payload": {"text": q["text"], "options": q["options"]}})
                     await broadcast_state()
+            elif t == "spin_wheel":
+                asyncio.create_task(run_wheel_sequence())
     except WebSocketDisconnect:
         hub.boss.discard(websocket)
 
@@ -157,11 +215,21 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                     })
                     await hub.to_guests({"type": "wait_boss", "payload": {}})
                 await broadcast_state()
+            elif t == "start_duel":
+                if game.start_duel():
+                    await hub.to_all({"type": "duel_start", "payload": {"challenger_name": game.guests[game.challenger_id].name}})
+                await broadcast_state()
+            elif t == "cancel_duel":
+                cancel_duel_timeout()
+                if game.cancel_duel():
+                    await hub.to_all({"type": "duel_cancelled", "payload": {}})
+                await broadcast_state()
             elif t == "damage_boss":
                 game.damage_boss(int(data.get("amount", 10)))
                 await hub.to_all({"type": "boss_hit", "payload": {"amount": int(data.get("amount", 10))}})
                 await broadcast_state()
             elif t == "reset":
+                cancel_duel_timeout()
                 game.reset()
                 await hub.to_all({"type": "reset", "payload": {}})
                 await broadcast_state()

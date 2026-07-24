@@ -1,9 +1,14 @@
 import json
+import random
 import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Optional
+
+DUEL_CATEGORIES = ["musica", "film", "videogioco", "data"]
+DUEL_DAMAGE = 25
+DUEL_WIN_BONUS_SCORE = 3
 
 
 class Phase(str, Enum):
@@ -11,6 +16,9 @@ class Phase(str, Enum):
     BOSS_ANSWERING = "boss_answering"
     GUESTS_ANSWERING = "guests_answering"
     ROUND_RESULT = "round_result"
+    DUEL_WHEEL = "duel_wheel"
+    DUEL_CHALLENGE = "duel_challenge"
+    DUEL_RESULT = "duel_result"
     GAME_OVER = "game_over"
 
 
@@ -23,8 +31,9 @@ class Guest:
 
 
 class GameState:
-    def __init__(self, questions_path: Path, max_hp: int = 100):
+    def __init__(self, questions_path: Path, duels_path: Path, max_hp: int = 100):
         self.questions = json.loads(Path(questions_path).read_text(encoding="utf-8"))
+        self.duels: dict[str, list[dict]] = json.loads(Path(duels_path).read_text(encoding="utf-8"))
         self.round_index = -1
         self.phase = Phase.LOBBY
         self.boss_answer: Optional[int] = None
@@ -33,6 +42,11 @@ class GameState:
         self.guests: dict[str, Guest] = {}
         self.max_hp = max_hp
         self.hp = max_hp
+
+        self.used_challenge_ids: set[str] = set()
+        self.challenger_id: Optional[str] = None
+        self.duel_category: Optional[str] = None
+        self.duel_challenge: Optional[dict] = None
 
     @property
     def current_question(self):
@@ -49,6 +63,9 @@ class GameState:
         self.boss_answer = None
         self.guest_answers = {}
         self.winner_id = None
+        self.challenger_id = None
+        self.duel_category = None
+        self.duel_challenge = None
         return True
 
     def submit_boss_answer(self, choice: int) -> bool:
@@ -91,12 +108,88 @@ class GameState:
         self.guest_answers = {}
         self.winner_id = None
         self.hp = self.max_hp
+        self.used_challenge_ids = set()
+        self.challenger_id = None
+        self.duel_category = None
+        self.duel_challenge = None
+
+    # ---- duel (scontro diretto) ----
+
+    def start_duel(self) -> bool:
+        if self.phase != Phase.ROUND_RESULT or not self.winner_id:
+            return False
+        self.challenger_id = self.winner_id
+        self.phase = Phase.DUEL_WHEEL
+        return True
+
+    def cancel_duel(self) -> bool:
+        if self.phase not in (Phase.DUEL_WHEEL, Phase.DUEL_CHALLENGE):
+            return False
+        self.challenger_id = None
+        self.duel_category = None
+        self.duel_challenge = None
+        self.phase = Phase.ROUND_RESULT
+        return True
+
+    def _pick_challenge(self, category: str) -> dict:
+        pool = [c for c in self.duels.get(category, []) if c["id"] not in self.used_challenge_ids]
+        if not pool:
+            pool = self.duels.get(category, [])
+            self.used_challenge_ids -= {c["id"] for c in pool}
+        challenge = random.choice(pool)
+        self.used_challenge_ids.add(challenge["id"])
+        return challenge
+
+    def spin_wheel(self) -> Optional[str]:
+        if self.phase != Phase.DUEL_WHEEL:
+            return None
+        category = random.choice(DUEL_CATEGORIES)
+        self.duel_category = category
+        self.duel_challenge = self._pick_challenge(category)
+        return category
+
+    def open_duel_challenge(self):
+        self.phase = Phase.DUEL_CHALLENGE
+
+    def submit_duel_answer(self, guest_id: str, choice: int) -> Optional[bool]:
+        if self.phase != Phase.DUEL_CHALLENGE or guest_id != self.challenger_id:
+            return None
+        correct = choice == self.duel_challenge["answer"]
+        if correct:
+            self.damage_boss(DUEL_DAMAGE)
+            if guest_id in self.guests:
+                self.guests[guest_id].score += DUEL_WIN_BONUS_SCORE
+        self.phase = Phase.DUEL_RESULT
+        return correct
+
+    def resolve_duel_timeout(self) -> bool:
+        if self.phase != Phase.DUEL_CHALLENGE:
+            return False
+        self.phase = Phase.DUEL_RESULT
+        return True
+
+    def public_duel_challenge(self) -> Optional[dict]:
+        c = self.duel_challenge
+        if not c:
+            return None
+        return {
+            "category": self.duel_category,
+            "kind": c.get("kind", "image"),
+            "media": c.get("media"),
+            "prompt": c.get("prompt"),
+            "options": c["options"],
+            "challenger_id": self.challenger_id,
+            "challenger_name": self.guests[self.challenger_id].name if self.challenger_id in self.guests else "?",
+        }
 
     def public_state(self) -> dict:
         q = self.current_question
         winner_name = None
         if self.winner_id and self.winner_id in self.guests:
             winner_name = self.guests[self.winner_id].name
+        challenger_name = None
+        if self.challenger_id and self.challenger_id in self.guests:
+            challenger_name = self.guests[self.challenger_id].name
         return {
             "phase": self.phase.value,
             "round": self.round_index + 1,
@@ -111,4 +204,6 @@ class GameState:
                 ({"name": g.name, "score": g.score} for g in self.guests.values()),
                 key=lambda x: -x["score"],
             )[:10],
+            "challenger_name": challenger_name,
+            "duel_category": self.duel_category,
         }

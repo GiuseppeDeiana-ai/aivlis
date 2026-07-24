@@ -25,8 +25,25 @@
         <h3 id="questionText"></h3>
         <div class="options" id="optionsBox"></div>
     </div>
+
+    <div id="duelScreen" style="display:none;">
+        <h2 id="duelChallengerLine" class="center"></h2>
+        <div class="card center" id="wheelCard" style="display:none;">
+            <div class="wheel-wrap" id="wheelWrap"></div>
+            <button class="primary" id="spinBtn">Gira la ruota!</button>
+        </div>
+        <div class="card center" id="duelChallengeCard" style="display:none;">
+            <h3 id="duelCategoryTitle"></h3>
+            <div id="duelMedia"></div>
+            <div class="status" id="duelSpectatorNote"></div>
+        </div>
+        <div class="card center" id="duelResultCard" style="display:none;">
+            <div id="duelResultBanner"></div>
+        </div>
+    </div>
 </div>
 
+<script src="/static/js/wheel.js"></script>
 <script src="/static/js/boss.js"></script>
 </body>
 </html>

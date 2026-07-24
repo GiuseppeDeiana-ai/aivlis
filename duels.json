@@ -1,0 +1,42 @@
+{
+  "musica": [
+    {
+      "id": "musica_1",
+      "media": "placeholder_1.wav",
+      "options": ["Titolo A", "Titolo B", "Titolo C", "Titolo D"],
+      "answer": 0
+    }
+  ],
+  "film": [
+    {
+      "id": "film_1",
+      "media": "placeholder_1.jpg",
+      "options": ["Titolo A", "Titolo B", "Titolo C", "Titolo D"],
+      "answer": 0
+    }
+  ],
+  "videogioco": [
+    {
+      "id": "videogioco_1",
+      "media": "placeholder_1.jpg",
+      "options": ["Titolo A", "Titolo B", "Titolo C", "Titolo D"],
+      "answer": 0
+    }
+  ],
+  "data": [
+    {
+      "id": "data_1",
+      "kind": "image_to_date",
+      "media": "placeholder_1.jpg",
+      "options": ["1969", "1989", "2001", "2010"],
+      "answer": 0
+    },
+    {
+      "id": "data_2",
+      "kind": "text_to_event",
+      "prompt": "1969",
+      "options": ["Sbarco sulla Luna", "Caduta del Muro di Berlino", "Attacco alle Torri Gemelle", "Fine della Guerra Fredda"],
+      "answer": 0
+    }
+  ]
+}

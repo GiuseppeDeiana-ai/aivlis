@@ -39,7 +39,12 @@
         <div class="row">
             <button class="primary" id="startBtn">Avvia prossima domanda</button>
         </div>
-        <h4>Scontro diretto (danno al boss)</h4>
+        <h4>Scontro diretto</h4>
+        <div class="row">
+            <button class="primary" id="startDuelBtn">Avvia scontro diretto</button>
+            <button class="primary danger" id="cancelDuelBtn">Annulla scontro</button>
+        </div>
+        <h4>Danno manuale (fallback)</h4>
         <div class="row">
             <button class="primary" id="dmg10">-10 HP</button>
             <button class="primary" id="dmg25">-25 HP</button>
@@ -51,12 +56,30 @@
         </div>
     </div>
 
+    <div id="duelScreen" style="display:none; width:100%;">
+        <h2 id="duelChallengerLine" class="center"></h2>
+        <div class="card center" id="wheelCard" style="display:none;">
+            <div class="wheel-wrap" id="wheelWrap"></div>
+            <div class="status">In attesa che la festeggiata giri la ruota...</div>
+        </div>
+        <div class="card center" id="duelChallengeCard" style="display:none;">
+            <h3 id="duelCategoryTitle"></h3>
+            <div id="duelMedia"></div>
+            <div class="options" id="duelOptionsBox"></div>
+            <div class="status" id="duelSpectatorNote"></div>
+        </div>
+        <div class="card center" id="duelResultCard" style="display:none;">
+            <div id="duelResultBanner"></div>
+        </div>
+    </div>
+
     <div class="card center">
         <h3>Classifica</h3>
         <table class="leaderboard" id="leaderboard"></table>
     </div>
 </div>
 
+<script src="/static/js/wheel.js"></script>
 <script src="/static/js/regia.js"></script>
 </body>
 </html>
