@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Boss Battle - La Laureata</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<h1>Sei il Boss Finale!</h1>
+
+<div class="hp-bar-wrap"><div class="hp-bar" id="hpBar" style="width:100%"></div></div>
+<div class="hp-label" id="hpLabel">HP 100/100</div>
+
+<div id="keyScreen" class="card center">
+    <h3>Codice accesso festeggiata</h3>
+    <input type="text" id="keyInput" placeholder="Codice">
+    <br>
+    <button class="primary" id="enterBtn">Entra</button>
+</div>
+
+<div id="gameScreen" style="display:none; width:100%; max-width:480px;">
+    <div class="status" id="statusLine">In attesa che la regia avvii la domanda...</div>
+    <div class="card" id="questionCard" style="display:none;">
+        <h3 id="questionText"></h3>
+        <div class="options" id="optionsBox"></div>
+    </div>
+</div>
+
+<script src="/static/js/boss.js"></script>
+</body>
+</html>

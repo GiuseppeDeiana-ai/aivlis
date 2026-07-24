@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Sfida la Laureata</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<h1>Sfida la Laureata</h1>
+
+<div class="hp-bar-wrap"><div class="hp-bar" id="hpBar" style="width:100%"></div></div>
+<div class="hp-label" id="hpLabel">HP 100/100</div>
+
+<div id="joinScreen" class="card center">
+    <h3>Come ti chiami?</h3>
+    <input type="text" id="nameInput" placeholder="Il tuo nome" maxlength="24">
+    <br>
+    <button class="primary" id="joinBtn">Entra in gioco</button>
+</div>
+
+<div id="gameScreen" style="display:none; width:100%; max-width:480px;">
+    <div class="status" id="statusLine">In attesa...</div>
+    <div id="winnerBanner" class="winner-banner" style="display:none;"></div>
+    <div class="card" id="questionCard" style="display:none;">
+        <h3 id="questionText"></h3>
+        <div class="options" id="optionsBox"></div>
+    </div>
+    <div class="card center">
+        <h3>Classifica</h3>
+        <table class="leaderboard" id="leaderboard"></table>
+    </div>
+</div>
+
+<script src="/static/js/guest.js"></script>
+</body>
+</html>

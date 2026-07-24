@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regia</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<h1>Regia</h1>
+
+<div id="keyScreen" class="card center">
+    <h3>Codice regia</h3>
+    <input type="text" id="keyInput" placeholder="Codice">
+    <br>
+    <button class="primary" id="enterBtn">Entra</button>
+</div>
+
+<div id="panel" style="display:none; width:100%; max-width:480px;">
+
+    <div class="card center">
+        <h3>QR per gli invitati</h3>
+        <div class="qr-box"><img src="/qr.png" alt="QR Code"></div>
+    </div>
+
+    <div class="hp-bar-wrap"><div class="hp-bar" id="hpBar" style="width:100%"></div></div>
+    <div class="hp-label" id="hpLabel">HP 100/100</div>
+
+    <div class="card center">
+        <div class="badge" id="phaseBadge">fase: lobby</div>
+        <div class="badge" id="roundBadge">round 0/0</div>
+        <div class="badge" id="onlineBadge">0 online</div>
+        <div class="badge" id="answersBadge">0 risposte</div>
+        <div id="winnerLine" class="status"></div>
+    </div>
+
+    <div class="card center">
+        <h3>Controlli</h3>
+        <div class="row">
+            <button class="primary" id="startBtn">Avvia prossima domanda</button>
+        </div>
+        <h4>Scontro diretto (danno al boss)</h4>
+        <div class="row">
+            <button class="primary" id="dmg10">-10 HP</button>
+            <button class="primary" id="dmg25">-25 HP</button>
+            <button class="primary danger" id="dmg100">KO</button>
+        </div>
+        <h4>Gioco</h4>
+        <div class="row">
+            <button class="primary danger" id="resetBtn">Reset partita</button>
+        </div>
+    </div>
+
+    <div class="card center">
+        <h3>Classifica</h3>
+        <table class="leaderboard" id="leaderboard"></table>
+    </div>
+</div>
+
+<script src="/static/js/regia.js"></script>
+</body>
+</html>

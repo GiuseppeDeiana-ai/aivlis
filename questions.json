@@ -1,0 +1,22 @@
+[
+  {
+    "text": "Qual e' il cibo preferito della laureata?",
+    "options": ["Pizza", "Sushi", "Carbonara", "Gelato"]
+  },
+  {
+    "text": "Qual e' stato il voto che si aspettava di prendere alla laurea?",
+    "options": ["90", "100", "105", "110"]
+  },
+  {
+    "text": "Qual e' la sua materia piu' odiata durante gli studi?",
+    "options": ["Matematica", "Diritto", "Statistica", "Chimica"]
+  },
+  {
+    "text": "Dove vorrebbe andare per il viaggio post-laurea?",
+    "options": ["Giappone", "Grecia", "Stati Uniti", "Islanda"]
+  },
+  {
+    "text": "Qual e' la sua serie TV preferita?",
+    "options": ["Friends", "Breaking Bad", "The Office", "Stranger Things"]
+  }
+]
