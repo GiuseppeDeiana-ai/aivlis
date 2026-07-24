@@ -118,7 +118,10 @@ function handleMessage(msg) {
         penanceRevealHeal.textContent = `+${msg.payload.heal} HP alla festeggiata! Rimaste: ${msg.payload.remaining}`;
         pulseHeal(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'heal');
+    } else if (msg.type === 'winner') {
+        fxFire();
     } else if (msg.type === 'duel_start') {
+        fxSkull();
         penanceScreen.style.display = 'none';
         duelScreen.style.display = 'block';
         duelChallengeCard.style.display = 'none';
@@ -179,15 +182,21 @@ function handleMessage(msg) {
             duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! -${msg.payload.damage} HP alla festeggiata!`;
             pulseShake(bossPortrait);
             pulseHpFlash(hpBar, hpBarWrap, 'damage');
+            fxFire();
+            fxPhotoFlash('win', `${msg.payload.winner_name} vince lo scontro!`);
         } else if (msg.payload.outcome === 'boss') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'La Laureata ha risposto prima! Nessun danno.';
+            fxVoid();
+            fxPhotoFlash('lose', 'La Laureata resiste allo scontro!');
         } else if (msg.payload.outcome === 'timeout') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'Tempo scaduto per entrambi, nessun danno.';
+            fxVoid();
         } else {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'Nessuno ha risposto correttamente, nessun danno.';
+            fxVoid();
         }
     } else if (msg.type === 'boss_hit') {
         pulseShake(bossPortrait);

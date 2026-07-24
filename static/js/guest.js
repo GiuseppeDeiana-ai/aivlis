@@ -103,13 +103,16 @@ function handleMessage(msg) {
             statusLine.textContent = 'Hai indovinato! Vai allo scontro diretto!';
         } else if (msg.payload.status === 'wrong') {
             statusLine.textContent = 'Risposta diversa dalla sua, aspetta la prossima domanda.';
+            fxVoid();
         }
         disableOptions();
     } else if (msg.type === 'winner') {
         winnerBanner.style.display = 'block';
         winnerBanner.textContent = `${msg.payload.name} ha indovinato per primo! Scontro diretto!`;
         disableOptions();
+        fxFire();
     } else if (msg.type === 'duel_start') {
+        fxSkull();
         startDuelView(msg.payload.challenger_name);
     } else if (msg.type === 'wheel_result') {
         showWheelSpin(msg.payload.category);
@@ -126,6 +129,13 @@ function handleMessage(msg) {
         if (msg.payload.outcome === 'challenger') {
             pulseShake(bossPortrait);
             pulseHpFlash(hpBar, hpBarWrap, 'damage');
+            fxFire();
+            fxPhotoFlash('win', `${msg.payload.winner_name} vince lo scontro!`);
+        } else if (msg.payload.outcome === 'boss') {
+            fxVoid();
+            fxPhotoFlash('lose', 'La Laureata resiste allo scontro!');
+        } else {
+            fxVoid();
         }
     } else if (msg.type === 'boss_hit') {
         pulseShake(bossPortrait);

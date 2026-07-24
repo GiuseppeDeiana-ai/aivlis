@@ -84,6 +84,7 @@ function handleMessage(msg) {
         });
         questionCard.style.display = 'block';
     } else if (msg.type === 'duel_start') {
+        fxSkull();
         questionCard.style.display = 'none';
         penanceCard.style.display = 'none';
         duelScreen.style.display = 'block';
@@ -143,17 +144,23 @@ function handleMessage(msg) {
         if (msg.payload.outcome === 'boss') {
             duelResultBanner.style.background = '';
             duelResultBanner.textContent = 'Hai risposto prima tu! Nessun danno!';
+            fxFire();
+            fxPhotoFlash('win', 'Hai vinto lo scontro!');
         } else if (msg.payload.outcome === 'challenger') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! Hai subito ${msg.payload.damage} danni!`;
             pulseShake(bossPortrait);
             pulseHpFlash(hpBar, hpBarWrap, 'damage');
+            fxVoid();
+            fxPhotoFlash('lose', 'Hai perso lo scontro!');
         } else if (msg.payload.outcome === 'timeout') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'Tempo scaduto per entrambi, sei salva!';
+            fxVoid();
         } else {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'Nessuno ha risposto correttamente, sei salva!';
+            fxVoid();
         }
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();

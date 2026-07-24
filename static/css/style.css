@@ -334,3 +334,124 @@ table.leaderboard td {
     color: #9d4edd;
     margin-right: 6px;
 }
+
+/* ---- Effetti speciali: fuoco (corretto/vittoria), vortice (sbagliato/sconfitta), teschio (scontro) ---- */
+
+.fx-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.fx-particle {
+    position: absolute;
+    font-size: 2rem;
+    transform: translate(-50%, -50%);
+    animation: fxParticleMove ease-out forwards;
+    --dx: 0px;
+    --dy: 0px;
+}
+
+@keyframes fxParticleMove {
+    0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.4); opacity: 0; }
+}
+
+.fx-void {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(10, 5, 25, 0) 0%, rgba(10, 5, 25, 0.7) 55%, rgba(0, 0, 0, 0.88) 100%);
+    opacity: 0;
+    animation: fxVoidPulse 1.1s ease-in-out forwards;
+}
+
+@keyframes fxVoidPulse {
+    0% { opacity: 0; }
+    30% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.fx-void::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #000, #2a1550, #000, #1b0e33, #000);
+    box-shadow: 0 0 60px 20px rgba(90, 50, 200, 0.55);
+    animation: fxVoidSpin 1.1s linear forwards, fxVoidGrow 1.1s ease-in-out forwards;
+}
+
+@keyframes fxVoidSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fxVoidGrow {
+    0% { width: 40px; height: 40px; margin: -20px; }
+    50% { width: 260px; height: 260px; margin: -130px; }
+    100% { width: 16px; height: 16px; margin: -8px; }
+}
+
+.fx-skull {
+    position: fixed;
+    left: 50%;
+    top: 22%;
+    font-size: 5rem;
+    z-index: 10000;
+    opacity: 0;
+    animation: fxSkullPop 1.15s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.8));
+}
+
+@keyframes fxSkullPop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(-25deg); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.3) rotate(8deg); }
+    55% { transform: translate(-50%, -50%) scale(1) rotate(-4deg); }
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9) rotate(0deg); }
+}
+
+.fx-photo-card {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: 240px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 4px solid #f9d423;
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08), 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 60px rgba(249, 212, 35, 0.6);
+    z-index: 10000;
+    opacity: 0;
+    animation: fxPhotoIn 0.4s ease forwards, fxPhotoOut 0.5s ease forwards 1.8s;
+}
+
+.fx-photo-card.lose {
+    border-color: #7c5cff;
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08), 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 60px rgba(90, 50, 200, 0.6);
+}
+
+.fx-photo-card img { width: 100%; display: block; }
+
+.fx-photo-caption {
+    text-align: center;
+    padding: 8px;
+    font-weight: 800;
+    background: rgba(0, 0, 0, 0.6);
+    font-size: 0.9rem;
+}
+
+@keyframes fxPhotoIn {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-8deg); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+}
+
+@keyframes fxPhotoOut {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+}
