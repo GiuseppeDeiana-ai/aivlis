@@ -2,9 +2,69 @@
   "musica": [
     {
       "id": "musica_1",
-      "media": "placeholder_1.wav",
-      "options": ["Titolo A", "Titolo B", "Titolo C", "Titolo D"],
-      "answer": 0
+      "media": "ACDC - T.N.T (Instrumental).mp3",
+      "options": ["Highway to Hell", "T.N.T.", "Back in Black", "Thunderstruck"],
+      "answer": 1
+    },
+    {
+      "id": "musica_2",
+      "media": "Bruno Mars - 24K Magic (Instrumental Original).mp3",
+      "options": ["Uptown Funk", "That's What I Like", "24K Magic", "Treasure"],
+      "answer": 2
+    },
+    {
+      "id": "musica_3",
+      "media": "Fabri Fibra BUGIARDO (Karaoke - Instrumental).mp3",
+      "options": ["Applausi per Fibra", "Bugiardo", "In Italia", "Pamplona"],
+      "answer": 1
+    },
+    {
+      "id": "musica_4",
+      "media": "Harry Styles - Sunflower Vol.6 (Official Instrumental).mp3",
+      "options": ["Watermelon Sugar", "As It Was", "Sunflower, Vol. 6", "Adore You"],
+      "answer": 2
+    },
+    {
+      "id": "musica_5",
+      "media": "Hey Ya! (Instrumental).mp3",
+      "options": ["Ms. Jackson", "The Way You Move", "Roses", "Hey Ya!"],
+      "answer": 3
+    },
+    {
+      "id": "musica_6",
+      "media": "Joan Jett I Love Rock n Roll (Instrumental).mp3",
+      "options": ["Bad Reputation", "I Love Rock 'n' Roll", "Crimson and Clover", "Cherry Bomb"],
+      "answer": 1
+    },
+    {
+      "id": "musica_7",
+      "media": "Night Changes (Instrumental) - One Direction.mp3",
+      "options": ["Story of My Life", "What Makes You Beautiful", "Night Changes", "Steal My Girl"],
+      "answer": 2
+    },
+    {
+      "id": "musica_8",
+      "media": "One Direction - Story of My Life (Audio) [Instrumental].mp3",
+      "options": ["Drag Me Down", "Story of My Life", "Perfect", "Night Changes"],
+      "answer": 1
+    },
+    {
+      "id": "musica_9",
+      "media": "one direction - what makes you beautiful (instrumental).mp3",
+      "options": ["Live While We're Young", "Best Song Ever", "One Thing", "What Makes You Beautiful"],
+      "answer": 3
+    },
+    {
+      "id": "musica_10",
+      "media": "Ricky Martin - Livin La Vida Loca (Official Instrumental).mp3",
+      "options": ["La Copa de la Vida", "Livin' la Vida Loca", "Shake Your Bon-Bon", "Maria"],
+      "answer": 1
+    },
+    {
+      "id": "musica_11",
+      "media": "Sabato - Jovanotti (KARAOKE base originale).mp3",
+      "options": ["Ragazzo Fortunato", "Bella", "Sabato", "L'Ombelico del Mondo"],
+      "answer": 2
     }
   ],
   "film": [
@@ -28,15 +88,15 @@
       "id": "data_1",
       "kind": "image_to_date",
       "media": "placeholder_1.jpg",
-      "options": ["1969", "1989", "2001", "2010"],
-      "answer": 0
+      "options": ["1989", "1969", "2001", "2010"],
+      "answer": 1
     },
     {
       "id": "data_2",
       "kind": "text_to_event",
       "prompt": "1969",
-      "options": ["Sbarco sulla Luna", "Caduta del Muro di Berlino", "Attacco alle Torri Gemelle", "Fine della Guerra Fredda"],
-      "answer": 0
+      "options": ["Caduta del Muro di Berlino", "Sbarco sulla Luna", "Attacco alle Torri Gemelle", "Fine della Guerra Fredda"],
+      "answer": 1
     }
   ]
 }

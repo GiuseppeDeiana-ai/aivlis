@@ -99,7 +99,8 @@ async def broadcast_duel_result(payload: dict):
     else:
         await log("⚔️ Nessuno ha risposto correttamente allo scontro, nessun danno.")
     await check_game_over()
-    asyncio.create_task(run_return_home())
+    if game.hp > 0:
+        asyncio.create_task(run_return_home())
 
 
 async def run_return_home():

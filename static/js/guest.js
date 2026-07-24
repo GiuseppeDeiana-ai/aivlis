@@ -233,7 +233,7 @@ function showDuelChallenge(payload) {
         duelMedia.innerHTML = '<div class="status">🎵 Ascolta dalle casse della regia...</div>';
     } else if (payload.media) {
         const img = document.createElement('img');
-        img.src = `/static/media/${payload.category}/${payload.media}`;
+        img.src = `/static/media/${payload.category}/${encodeURIComponent(payload.media)}`;
         img.style.maxWidth = '100%';
         img.style.borderRadius = '10px';
         duelMedia.appendChild(img);

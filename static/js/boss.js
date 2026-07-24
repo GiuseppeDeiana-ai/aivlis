@@ -116,7 +116,7 @@ function handleMessage(msg) {
             duelMedia.innerHTML = '<div class="status">🎵 Ascolta dalle casse della regia...</div>';
         } else if (msg.payload.media) {
             const img = document.createElement('img');
-            img.src = `/static/media/${msg.payload.category}/${msg.payload.media}`;
+            img.src = `/static/media/${msg.payload.category}/${encodeURIComponent(msg.payload.media)}`;
             img.style.maxWidth = '100%';
             img.style.borderRadius = '10px';
             duelMedia.appendChild(img);

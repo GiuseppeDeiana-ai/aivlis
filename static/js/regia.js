@@ -164,12 +164,12 @@ function handleMessage(msg) {
             const audio = document.createElement('audio');
             audio.controls = true;
             audio.autoplay = true;
-            audio.src = `/static/media/musica/${msg.payload.media}`;
+            audio.src = `/static/media/musica/${encodeURIComponent(msg.payload.media)}`;
             audio.play().catch(() => {});
             duelMedia.appendChild(audio);
         } else if (msg.payload.media) {
             const img = document.createElement('img');
-            img.src = `/static/media/${msg.payload.category}/${msg.payload.media}`;
+            img.src = `/static/media/${msg.payload.category}/${encodeURIComponent(msg.payload.media)}`;
             img.style.maxWidth = '100%';
             img.style.borderRadius = '10px';
             duelMedia.appendChild(img);

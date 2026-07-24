@@ -1,22 +1,187 @@
 [
   {
-    "text": "Qual e' il cibo preferito della laureata?",
-    "options": ["Pizza", "Sushi", "Carbonara", "Gelato"]
+    "text": "Quale cibo sceglierebbe Silvia?",
+    "options": ["Pizza", "Sushi", "KFC", "Burger King"]
   },
   {
-    "text": "Qual e' stato il voto che si aspettava di prendere alla laurea?",
-    "options": ["90", "100", "105", "110"]
+    "text": "Qual e' stato il voto di Silvia?",
+    "options": ["90", "102", "104", "60"]
   },
   {
     "text": "Qual e' la sua materia piu' odiata durante gli studi?",
-    "options": ["Matematica", "Diritto", "Statistica", "Chimica"]
+    "options": ["Latino", "Glottologia", "Storia contemporanea", "Storia medioevale"]
   },
   {
-    "text": "Dove vorrebbe andare per il viaggio post-laurea?",
-    "options": ["Giappone", "Grecia", "Stati Uniti", "Islanda"]
+    "text": "Quale meta sceglierebbe Silvia?",
+    "options": ["Giappone", "Canada", "Stati Uniti", "Caraibi"]
   },
   {
     "text": "Qual e' la sua serie TV preferita?",
-    "options": ["Friends", "Breaking Bad", "The Office", "Stranger Things"]
+    "options": ["Friends", "Breaking Bad", "The Office", "House of the dragon"]
+  },
+   {
+    "text": "Quale saga preferisce Silvia?",
+    "options": ["Harry Potter", "Il signore degli anelli", "Transformers", "I pirati dei caraibi"]
+  },
+   {
+    "text": "Quale animale la rappresenta di più?",
+    "options": ["Cane", "Gatto", "Cavallo", "Tigre"]
+  },
+   {
+    "text": "Quale super potere vorrebbe avere?",
+    "options": ["Teletrasporto", "Viaggiare nel tempo", "Diventare invisibile", "Super forza"]
+  },
+   {
+    "text": "Cosa farebbe con 1 milione di euro?",
+    "options": ["Macchina", "Casa", "Investimenti", "Beneficenza"]
+  },
+   {
+    "text": "Qual e' la sua bevanda del cuore all'aperitivo?",
+    "options": ["Spritz", "Gin Tonic", "Birra", "Coca-cola"]
+  },
+   {
+    "text": "Qual e' il suo genere musicale preferito?",
+    "options": ["Pop", "Rock", "Reggaeton", "Colonne sonore epiche"]
+  },
+   {
+    "text": "Qual e' il suo piatto guilty pleasure?",
+    "options": ["Patatine fritte", "Nutella a cucchiaiate", "Pizza a mezzanotte", "Gelato dal barattolo"]
+  },
+   {
+    "text": "Su quale argomento ha scritto la tesi?",
+    "options": ["Una rivista", "Linguistica storica", "Letteratura medievale", "Un autore classico"]
+  },
+   {
+    "text": "Cosa la descrive meglio come studentessa?",
+    "options": ["Ultima ora prima dell'esame", "Riassunti perfetti", "Sempre in biblioteca", "Chiede a Giuseppe"]
+  },
+   {
+    "text": "Cosa sceglierebbe come colonna sonora della sua vita?",
+    "options": ["colonna sonora pirati dei c.", "canzone della contea", "canzone degli 1D", "Un ballo sardo"]
+  },
+   {
+    "text": "Qual e' il suo animale fantastico preferito?",
+    "options": ["Draghi", "Unicorni", "Grifoni", "Fenici"]
+  },
+   {
+    "text": "Quale personaggio storico vorrebbe incontrare?",
+    "options": ["Hitler", "Leonardo da Vinci", "Napoleone", "Giulio Cesare"]
+  },
+   {
+    "text": "Qual e' la sua stagione preferita?",
+    "options": ["Primavera", "Estate", "Autunno", "Inverno"]
+  },
+   {
+    "text": "Qual e' il suo colore preferito?",
+    "options": ["Nero", "Verde", "Rosa", "Rosso"]
+  },
+   {
+    "text": "Quale sport vorrebbe provare?",
+    "options": ["Equitazione", "Arrampicata", "Tiro con l'arco", "Nessuno"]
+  },
+   {
+    "text": "Cosa non manca mai nella sua borsa?",
+    "options": ["Ventaglio", "Il powerbank", "Caramelle", "Le chiavi di Giuseppe"]
+  },
+   {
+    "text": "Qual e' il suo peggior incubo da esame?",
+    "options": ["Scena muta", "Sbagliare aula", "Arrivare in ritardo", "Una domanda a trabocchetto"]
+  },
+   {
+    "text": "Qual e' il suo social preferito?",
+    "options": ["Instagram", "TikTok", "Twitter/X", "Facebook"]
+  },
+   {
+    "text": "Cosa ordina sempre al ristorante?",
+    "options": ["Il primo", "Il secondo", "Solo antipasti", "Il dolce"]
+  },
+   {
+    "text": "Qual e' il suo film d'animazione preferito?",
+    "options": ["Cars", "Shrek", "Toy story", "Coco"]
+  },
+   {
+    "text": "Come reagisce quando e' stressata?",
+    "options": ["Studia di piu'", "Si distrae con le serie tv", "Mangia", "Fa un pisolino"]
+  },
+   {
+    "text": "A quale videogioco ha giocato di piu'?",
+    "options": ["Arc raiders", "The Sims", "Helldivers 2", "Assassin's creed"]
+  },
+   {
+    "text": "Come le piace viaggiare?",
+    "options": ["Zaino in spalla", "Poco organizzato", "All'ultimo minuto", "6 mesi di pianificazione"]
+  },
+   {
+    "text": "Cosa farebbe in una giornata libera senza impegni?",
+    "options": ["Maratona di serie tv", "Shopping", "Passeggiata nella natura", "Dormire tutto il giorno"]
+  },
+   {
+    "text": "Qual e' la sua paura piu' assurda?",
+    "options": ["I ragni", "Giuseppe che sorride al buio", "L'altezza", "I pagliacci"]
+  },
+   {
+    "text": "Qual e' il suo dolce preferito?",
+    "options": ["La torta del babbo'", "Cheesecake", "Brownies", "Gelato"]
+  },
+   {
+    "text": "Quale supereroe preferisce?",
+    "options": ["Batman", "Cap. America", "Spider-Man", "Thor"]
+  },
+   {
+    "text": "Come preferisce guardare un film?",
+    "options": ["Al cinema", "Sul divano sotto le coperte", "Con popcorn", "In compagnia"]
+  },
+   {
+    "text": "Quale materia avrebbe voluto approfondire di piu'?",
+    "options": ["Storia dell'arte", "Filosofia", "Archeologia", "Mitologia"]
+  },
+   {
+    "text": "Qual e' il suo momento preferito della giornata?",
+    "options": ["Mattina", "Pomeriggio", "Sera", "Notte"]
+  },
+   {
+    "text": "Cosa sceglierebbe per una serata perfetta?",
+    "options": ["Cena romantica", "Serata con amici", "Film e coperta", "Concerto"]
+  },
+   {
+    "text": "Quale oggetto porterebbe su un'isola deserta?",
+    "options": ["Un libro", "Il telefono", "Un coltellino svizzero", "Una foto di famiglia"]
+  },
+   {
+    "text": "Come le piace essere svegliata al mattino?",
+    "options": ["Sveglia dolce", "Caffe' a letto", "Musica", "Nessuno la sveglia"]
+  },
+   {
+    "text": "Come reagisce guardando un film horror?",
+    "options": ["Urla", "Si nasconde", "Ride", "E' tesa"]
+  },
+   {
+    "text": "Quale animale domestico vorrebbe avere?",
+    "options": ["Cane", "Gatto", "Coniglio", "Drago di Comodo"]
+  },
+   {
+    "text": "Quale accessorio non si toglie mai?",
+    "options": ["Occhiali", "Orecchini", "Anello di fidanzamento", "Orologio"]
+  },
+   {
+    "text": "Cosa fa appena si sveglia?",
+    "options": ["Controlla il telefono", "Si stiracchia", "Beve un bicchiere d'acqua", "Torna a dormire 5 minuti"]
+  },
+   {
+    "text": "Qual e' il suo rituale prima di un esame?",
+    "options": ["Ripasso fino all'ultimo", "Un momento di silenzio", "Cornetto e caffe'", "Playlist motivazionale"]
+  },
+   {
+    "text": "Quale elemento naturale la rappresenta di piu'?",
+    "options": ["Fuoco", "Acqua", "Aria", "Terra"]
+  },
+   {
+    "text": "Qual e' il suo genere di film preferito?",
+    "options": ["Commedia", "Fantasy", "Thriller", "Horror"]
+  },
+   {
+    "text": "Qual e' il suo souvenir di viaggio preferito da comprare?",
+    "options": ["Un magnete", "Una foto ricordo", "penne/matite", "Bicchierino"]
   }
 ]
+

@@ -198,7 +198,9 @@ class GameState:
         return correct
 
     def duel_resolved(self) -> bool:
-        return self.phase == Phase.DUEL_RESULT
+        # damage_boss() puo' sovrascrivere la fase con GAME_OVER se il colpo e' quello
+        # decisivo: il duello resta comunque risolto, va solo trasmesso il risultato.
+        return self.phase in (Phase.DUEL_RESULT, Phase.GAME_OVER)
 
     def resolve_duel_timeout(self) -> bool:
         if self.phase != Phase.DUEL_CHALLENGE:
