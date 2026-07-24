@@ -41,6 +41,9 @@ const penanceWheelWrap = document.getElementById('penanceWheelWrap');
 const penanceRevealBox = document.getElementById('penanceRevealBox');
 const penanceRevealText = document.getElementById('penanceRevealText');
 const penanceRevealHeal = document.getElementById('penanceRevealHeal');
+const penanceConfirmRow = document.getElementById('penanceConfirmRow');
+const confirmPenanceBtn = document.getElementById('confirmPenanceBtn');
+const declinePenanceBtn = document.getElementById('declinePenanceBtn');
 
 const logPanel = document.getElementById('logPanel');
 const MAX_LOG_ENTRIES = 60;
@@ -125,9 +128,16 @@ function handleMessage(msg) {
         penanceWheelWrap.style.display = 'none';
         penanceRevealBox.style.display = 'block';
         penanceRevealText.textContent = msg.payload.text;
-        penanceRevealHeal.textContent = `+${msg.payload.heal} HP alla festeggiata! Rimaste: ${msg.payload.remaining}`;
+        penanceRevealHeal.textContent = `Se l'ha fatta davvero: +${msg.payload.heal} HP. Rimaste: ${msg.payload.remaining}`;
+        penanceConfirmRow.style.display = 'flex';
+    } else if (msg.type === 'penance_confirmed') {
+        penanceConfirmRow.style.display = 'none';
+        penanceRevealHeal.textContent = `✅ Confermata: +${msg.payload.heal} HP alla festeggiata!`;
         pulseHeal(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'heal');
+    } else if (msg.type === 'penance_declined') {
+        penanceConfirmRow.style.display = 'none';
+        penanceRevealHeal.textContent = '❌ Non confermata: nessun HP guadagnato.';
     } else if (msg.type === 'winner') {
         fxFire();
         fxConfetti(40);
@@ -233,6 +243,9 @@ document.getElementById('cancelDuelBtn').onclick = () => ws.send(JSON.stringify(
 document.getElementById('dmg10').onclick = () => ws.send(JSON.stringify({ type: 'damage_boss', amount: 10 }));
 document.getElementById('dmg25').onclick = () => ws.send(JSON.stringify({ type: 'damage_boss', amount: 25 }));
 document.getElementById('dmg100').onclick = () => ws.send(JSON.stringify({ type: 'damage_boss', amount: 100 }));
+confirmPenanceBtn.onclick = () => ws.send(JSON.stringify({ type: 'confirm_penance' }));
+declinePenanceBtn.onclick = () => ws.send(JSON.stringify({ type: 'decline_penance' }));
+
 setPenanceLimitBtn.onclick = () => {
     const limit = parseInt(penanceLimitInput.value, 10);
     if (Number.isNaN(limit) || limit < 0) return;

@@ -194,9 +194,13 @@ function handleMessage(msg) {
         penanceWheelWrap.style.display = 'none';
         penanceRevealCard.style.display = 'block';
         penanceRevealText.textContent = msg.payload.text;
-        penanceRevealHeal.textContent = `+${msg.payload.heal} HP! Penitenze rimaste: ${msg.payload.remaining}`;
+        penanceRevealHeal.textContent = `Falla davvero! In attesa di conferma dalla regia (+${msg.payload.heal} HP)...`;
+    } else if (msg.type === 'penance_confirmed') {
+        penanceRevealHeal.textContent = `✅ Confermata! +${msg.payload.heal} HP!`;
         pulseHeal(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'heal');
+    } else if (msg.type === 'penance_declined') {
+        penanceRevealHeal.textContent = '❌ La regia non ha confermato: nessun HP guadagnato.';
     } else if (msg.type === 'penance_denied') {
         penanceStatusLine.textContent = msg.payload.remaining <= 0
             ? 'Hai finito le penitenze disponibili.'
@@ -208,10 +212,13 @@ function handleMessage(msg) {
         lobbyCard.style.display = msg.payload.phase === 'lobby' ? 'block' : 'none';
         lastPenanceCount = msg.payload.penance_count;
         const canSpinPenance = !penanceSpinning
+            && !msg.payload.penance_pending
             && msg.payload.penance_remaining > 0
             && !['duel_wheel', 'duel_challenge', 'game_over'].includes(msg.payload.phase);
         penanceSpinBtn.disabled = !canSpinPenance;
-        penanceSpinBtn.textContent = `Gira la ruota delle penitenze (rimaste: ${msg.payload.penance_remaining})`;
+        penanceSpinBtn.textContent = msg.payload.penance_pending
+            ? 'In attesa di conferma dalla regia...'
+            : `Gira la ruota delle penitenze (rimaste: ${msg.payload.penance_remaining})`;
         if (msg.payload.phase === 'game_over') {
             statusLine.textContent = 'Sei stata sconfitta! Complimenti alla laurea!';
             questionCard.style.display = 'none';

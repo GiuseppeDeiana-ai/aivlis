@@ -57,6 +57,7 @@ class GameState:
         self.penance_limit: int = DEFAULT_PENANCE_LIMIT
         self.penance_used: int = 0
         self.used_penance_indices: set[int] = set()
+        self.pending_penance_heal: Optional[int] = None
 
     @property
     def current_question(self):
@@ -128,6 +129,7 @@ class GameState:
         self.duel_winner = None
         self.penance_used = 0
         self.used_penance_indices = set()
+        self.pending_penance_heal = None
 
     # ---- duel (scontro diretto) ----
 
@@ -256,6 +258,8 @@ class GameState:
     def can_spin_penance(self) -> bool:
         if self.phase in (Phase.DUEL_WHEEL, Phase.DUEL_CHALLENGE, Phase.GAME_OVER):
             return False
+        if self.pending_penance_heal is not None:
+            return False
         return self.penance_remaining() > 0 and len(self.penances) > 0
 
     def heal_boss(self, amount: int):
@@ -271,13 +275,29 @@ class GameState:
         index = random.choice(pool)
         self.used_penance_indices.add(index)
         self.penance_used += 1
-        self.heal_boss(PENANCE_HEAL)
+        self.pending_penance_heal = PENANCE_HEAL
         return {
             "index": index,
             "text": self.penances[index],
             "heal": PENANCE_HEAL,
             "remaining": self.penance_remaining(),
         }
+
+    def confirm_penance(self) -> Optional[int]:
+        """La regia confirma che la festeggiata ha davvero fatto la penitenza: applica l'HP."""
+        if self.pending_penance_heal is None:
+            return None
+        amount = self.pending_penance_heal
+        self.pending_penance_heal = None
+        self.heal_boss(amount)
+        return amount
+
+    def decline_penance(self) -> bool:
+        """La regia segnala che la penitenza non e' stata fatta: nessun HP."""
+        if self.pending_penance_heal is None:
+            return False
+        self.pending_penance_heal = None
+        return True
 
     def public_state(self) -> dict:
         q = self.current_question
@@ -307,4 +327,5 @@ class GameState:
             "penance_used": self.penance_used,
             "penance_remaining": self.penance_remaining(),
             "penance_count": len(self.penances),
+            "penance_pending": self.pending_penance_heal is not None,
         }

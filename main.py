@@ -126,7 +126,7 @@ async def run_penance_sequence():
     await asyncio.sleep(WHEEL_SPIN_SECONDS)
     await hub.to_all({"type": "penance_result", "payload": result})
     await broadcast_state()
-    await log(f"❤️ Penitenza: \"{result['text']}\" — +{result['heal']} HP (rimaste: {result['remaining']})")
+    await log(f"❤️ Penitenza estratta: \"{result['text']}\" — in attesa di conferma dalla regia (+{result['heal']} HP)")
 
 
 async def run_wheel_sequence():
@@ -295,6 +295,21 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                     await hub.to_all({"type": "duel_cancelled", "payload": {}})
                     await log("🚫 Scontro diretto annullato dalla regia.")
                 await broadcast_state()
+            elif t == "confirm_penance":
+                amount = game.confirm_penance()
+                if amount is not None:
+                    await hub.to_all({"type": "penance_confirmed", "payload": {"heal": amount}})
+                    await log(f"✅ Penitenza confermata dalla regia: +{amount} HP alla festeggiata.")
+                    await broadcast_state()
+                else:
+                    await log("ℹ️ Nessuna penitenza in attesa da confermare.")
+            elif t == "decline_penance":
+                if game.decline_penance():
+                    await hub.to_all({"type": "penance_declined", "payload": {}})
+                    await log("❌ Penitenza NON confermata dalla regia: nessun HP guadagnato.")
+                    await broadcast_state()
+                else:
+                    await log("ℹ️ Nessuna penitenza in attesa da rifiutare.")
             elif t == "set_penance_limit":
                 limit = int(data.get("limit", 3))
                 game.set_penance_limit(limit)

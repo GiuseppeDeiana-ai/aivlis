@@ -166,9 +166,13 @@ function handleMessage(msg) {
         penanceWheelWrap.style.display = 'none';
         penanceRevealBox.style.display = 'block';
         penanceRevealText.textContent = msg.payload.text;
-        penanceRevealHeal.textContent = `+${msg.payload.heal} HP alla festeggiata!`;
+        penanceRevealHeal.textContent = 'In attesa che la regia confermi se l\'ha fatta davvero...';
+    } else if (msg.type === 'penance_confirmed') {
+        penanceRevealHeal.textContent = `✅ Confermata! +${msg.payload.heal} HP alla festeggiata!`;
         pulseHeal(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'heal');
+    } else if (msg.type === 'penance_declined') {
+        penanceRevealHeal.textContent = '❌ Non confermata dalla regia: nessun HP guadagnato.';
     } else if (msg.type === 'state') {
         updateState(msg.payload);
     } else if (msg.type === 'reset') {
