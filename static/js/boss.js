@@ -36,8 +36,10 @@ const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
 const duelTimerBar = document.getElementById('duelTimerBar');
 const wheelStatusText = document.getElementById('wheelStatusText');
+const roundTimerBar = document.getElementById('roundTimerBar');
 
 const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
+const ROUND_REVEAL_SECONDS_JS = 20; // deve corrispondere a ROUND_REVEAL_SECONDS in main.py
 
 const penanceCard = document.getElementById('penanceCard');
 const penanceWheelWrap = document.getElementById('penanceWheelWrap');
@@ -94,9 +96,23 @@ function handleMessage(msg) {
     } else if (msg.type === 'round_countdown') {
         statusLine.textContent = 'Il conto alla rovescia e iniziato per gli invitati...';
         fxCountdown(msg.payload.seconds);
+        setTimeout(() => {
+            statusLine.textContent = 'Gli invitati hanno 20 secondi per rispondere...';
+            startCountdownBar(roundTimerBar, ROUND_REVEAL_SECONDS_JS);
+        }, msg.payload.seconds * 1000);
+    } else if (msg.type === 'winner') {
+        stopCountdownBar(roundTimerBar);
+        if (msg.payload.name) {
+            statusLine.textContent = `${msg.payload.name} ha indovinato per primo! Preparati allo scontro diretto!`;
+            fxFire();
+            fxConfetti(40);
+        } else {
+            statusLine.textContent = 'Nessuno ha indovinato questa volta! Prepara la prossima domanda.';
+        }
     } else if (msg.type === 'round_started') {
         hasAnswered = false;
         hideDuelScreen();
+        stopCountdownBar(roundTimerBar);
         penanceCard.style.display = 'block';
         statusLine.textContent = `Domanda ${msg.payload.round}/${msg.payload.total} - rispondi tu per prima!`;
         questionText.textContent = msg.payload.text;
@@ -145,7 +161,11 @@ function handleMessage(msg) {
         }
         duelMedia.innerHTML = '';
         if (msg.payload.category === 'musica') {
-            duelMedia.innerHTML = '<div class="status">🎵 Ascolta dalle casse della regia...</div>';
+            duelMedia.appendChild(buildEqualizer());
+            const note = document.createElement('div');
+            note.className = 'status';
+            note.textContent = '🎵 Ascolta dalle casse della regia...';
+            duelMedia.appendChild(note);
         } else if ((msg.payload.category === 'film' || msg.payload.category === 'videogioco') && msg.payload.media) {
             const canvas = document.createElement('canvas');
             canvas.width = msg.payload.category === 'film' ? 300 : 400;
@@ -162,7 +182,7 @@ function handleMessage(msg) {
             duelMedia.appendChild(img);
         } else if (msg.payload.prompt) {
             const div = document.createElement('div');
-            div.className = 'status';
+            div.className = msg.payload.category === 'data' ? 'status data-parchment' : 'status';
             div.style.fontSize = '2rem';
             div.style.fontWeight = 'bold';
             div.textContent = msg.payload.prompt;
@@ -196,6 +216,7 @@ function handleMessage(msg) {
             fxFire();
             fxConfetti(50);
             fxPhotoFlash('win', 'Hai vinto lo scontro!');
+            fxVibrate([100, 50, 100]);
         } else if (msg.payload.outcome === 'challenger') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! Hai subito ${msg.payload.damage} danni!`;
@@ -204,14 +225,17 @@ function handleMessage(msg) {
             fxScreenShake();
             fxVoid();
             fxPhotoFlash('lose', 'Hai perso lo scontro!');
+            fxVibrate(200);
         } else if (msg.payload.outcome === 'timeout') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'Tempo scaduto per entrambi, sei salva!';
             fxVoid();
+            fxVibrate(200);
         } else {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'Nessuno ha risposto correttamente, sei salva!';
             fxVoid();
+            fxVibrate(200);
         }
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
@@ -252,6 +276,7 @@ function handleMessage(msg) {
         hpBar.style.width = pct + '%';
         hpLabel.textContent = `HP ${msg.payload.hp}/${msg.payload.max_hp}`;
         lobbyCard.style.display = msg.payload.phase === 'lobby' ? 'block' : 'none';
+        document.body.classList.toggle('enrage-mode', msg.payload.hp > 0 && pct < 25);
         lastPenanceCount = msg.payload.penance_count;
         const canSpinPenance = !penanceSpinning
             && !msg.payload.penance_pending
@@ -275,7 +300,7 @@ function handleMessage(msg) {
         pulseShake(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'damage');
     } else if (msg.type === 'reveal_leaderboard') {
-        fxRevealLeaderboard(msg.payload.leaderboard);
+        fxRevealLeaderboard(msg.payload.leaderboard, msg.payload.awards);
     } else if (msg.type === 'reset') {
         questionCard.style.display = 'none';
         hideDuelScreen();
@@ -283,8 +308,10 @@ function handleMessage(msg) {
         penanceRevealCard.style.display = 'none';
         penanceWheelWrap.style.display = 'none';
         stopCountdownBar(duelTimerBar);
+        stopCountdownBar(roundTimerBar);
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         gameOverShown = false;
+        document.body.classList.remove('enrage-mode');
         const finaleEl = document.getElementById('fxFinaleOverlay');
         if (finaleEl) finaleEl.remove();
         const leaderboardEl = document.getElementById('fxLeaderboardOverlay');

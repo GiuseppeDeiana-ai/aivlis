@@ -24,6 +24,7 @@ DUEL_TIMEOUT_SECONDS = 20.0
 RETURN_HOME_SECONDS = 5.0  # quanto restare sulla schermata di risultato prima di tornare alla home
 DUEL_COUNTDOWN_SECONDS = 3.0  # conto alla rovescia dopo che la regia invia la sfida a tutti
 ROUND_COUNTDOWN_SECONDS = 3.0  # conto alla rovescia dopo la risposta del boss, prima che gli invitati vedano la domanda
+ROUND_REVEAL_SECONDS = 20.0  # finestra di risposta per gli invitati prima di rivelare chi ha indovinato per primo
 PING_INTERVAL_SECONDS = 20.0  # sotto i tipici timeout di inattivita' dei proxy cloud (es. Render, ~55-60s)
 
 
@@ -55,6 +56,7 @@ templates.env.globals["asset_version"] = ASSET_VERSION
 game = GameState(BASE_DIR / "questions.json", BASE_DIR / "duels.json", BASE_DIR / "penitenze.json")
 duel_timeout_task: asyncio.Task | None = None
 duel_countdown_task: asyncio.Task | None = None
+round_reveal_task: asyncio.Task | None = None
 
 
 SEND_TIMEOUT_SECONDS = 4.0  # oltre questo tempo una connessione si considera bloccata/morta
@@ -152,6 +154,13 @@ def cancel_duel_countdown():
         duel_countdown_task = None
 
 
+def cancel_round_reveal():
+    global round_reveal_task
+    if round_reveal_task is not None:
+        round_reveal_task.cancel()
+        round_reveal_task = None
+
+
 async def broadcast_duel_result(payload: dict):
     await hub.to_all({"type": "duel_result", "payload": payload})
     await broadcast_state()
@@ -222,12 +231,34 @@ async def run_duel_countdown():
 
 
 async def run_round_open_sequence():
+    global round_reveal_task
     await hub.to_all({"type": "round_countdown", "payload": {"seconds": ROUND_COUNTDOWN_SECONDS}})
     await asyncio.sleep(ROUND_COUNTDOWN_SECONDS)
     q = game.current_question
-    await hub.to_guests({"type": "round_open", "payload": {"text": q["text"], "options": q["options"]}})
-    await hub.to_spectators({"type": "round_open", "payload": {"text": q["text"], "options": q["options"]}})
-    await log(f"👑 La festeggiata ha risposto alla domanda {game.round_index + 1}. Ora rispondono gli invitati.")
+    game.mark_round_open()
+    payload = {"text": q["text"], "options": q["options"], "seconds": ROUND_REVEAL_SECONDS}
+    await hub.to_guests({"type": "round_open", "payload": payload})
+    await hub.to_spectators({"type": "round_open", "payload": payload})
+    await log(f"👑 La festeggiata ha risposto alla domanda {game.round_index + 1}. Ora rispondono gli invitati (20s).")
+    await broadcast_state()
+    round_reveal_task = asyncio.create_task(run_round_reveal_timeout())
+
+
+async def run_round_reveal_timeout():
+    try:
+        await asyncio.sleep(ROUND_REVEAL_SECONDS)
+    except asyncio.CancelledError:
+        return
+    if not game.is_awaiting_guest_answers():
+        return
+    winner_id = game.finalize_round_winner()
+    if winner_id and winner_id in game.guests:
+        name = game.guests[winner_id].name
+        await hub.to_all({"type": "winner", "payload": {"name": name, "guest_id": winner_id}})
+        await log(f"🏆 {name} ha indovinato per primo! Pronto per lo scontro diretto.")
+    else:
+        await hub.to_all({"type": "winner", "payload": {"name": None, "guest_id": None}})
+        await log("😶 Nessuno ha indovinato questa volta.")
     await broadcast_state()
 
 
@@ -302,9 +333,10 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                     await hub._send(websocket, {"type": "answer_ack", "payload": {"status": "not_open_or_duplicate"}})
                 else:
                     await hub._send(websocket, {"type": "answer_ack", "payload": {"status": "correct" if result else "wrong"}})
+                    await hub.to_regia({"type": "answer_progress", "payload": {"name": guest_name}})
+                    await hub.to_spectators({"type": "answer_progress", "payload": {"name": guest_name}})
                     if result:
-                        await hub.to_all({"type": "winner", "payload": {"name": guest_name, "guest_id": guest_id}})
-                        await log(f"🏆 {guest_name} ha indovinato per primo! Pronto per lo scontro diretto.")
+                        await log(f"✅ {guest_name} ha risposto correttamente, in attesa della rivelazione...")
                     else:
                         await log(f"❌ {guest_name} ha risposto, ma diverso dalla festeggiata.")
                     await broadcast_state()
@@ -402,6 +434,7 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 else:
                     await log("ℹ️ La partita e' già stata avviata.")
             elif t == "start_round":
+                cancel_round_reveal()
                 if game.start_round():
                     q = game.current_question
                     await hub.to_boss({
@@ -463,13 +496,18 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 await broadcast_state()
             elif t == "reveal_leaderboard":
                 if game.hp <= 0:
-                    await hub.to_all({"type": "reveal_leaderboard", "payload": {"leaderboard": game.public_state()["leaderboard"]}})
+                    payload = {
+                        "leaderboard": game.public_state()["leaderboard"],
+                        "awards": game.compute_awards(),
+                    }
+                    await hub.to_all({"type": "reveal_leaderboard", "payload": payload})
                     await log("🏆 Classifica finale rivelata a tutti dalla regia.")
                 else:
                     await log("ℹ️ La partita non e' ancora finita, non si può rivelare la classifica.")
             elif t == "reset":
                 cancel_duel_timeout()
                 cancel_duel_countdown()
+                cancel_round_reveal()
                 game.reset()
                 await hub.to_all({"type": "reset", "payload": {}})
                 await log("🔄 Partita resettata dalla regia.")

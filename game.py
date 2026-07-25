@@ -31,6 +31,10 @@ class Guest:
     name: str
     score: int = 0
     connected: bool = True
+    correct_answers: int = 0
+    duels_won: int = 0
+    duels_lost: int = 0
+    fastest_correct_seconds: Optional[float] = None
 
 
 class GameState:
@@ -42,6 +46,7 @@ class GameState:
         self.round_index = -1
         self.phase = Phase.LOBBY
         self.boss_answer: Optional[int] = None
+        self.round_open_at: Optional[float] = None
         self.guest_answers: dict[str, dict] = {}
         self.winner_id: Optional[str] = None
         self.guests: dict[str, Guest] = {}
@@ -74,6 +79,7 @@ class GameState:
         self.round_index += 1
         self.phase = Phase.BOSS_ANSWERING
         self.boss_answer = None
+        self.round_open_at = None
         self.guest_answers = {}
         self.winner_id = None
         self.challenger_id = None
@@ -91,19 +97,50 @@ class GameState:
         self.phase = Phase.GUESTS_ANSWERING
         return True
 
+    def is_awaiting_guest_answers(self) -> bool:
+        return self.phase == Phase.GUESTS_ANSWERING
+
+    def mark_round_open(self):
+        """Chiamato quando la domanda diventa visibile agli invitati: e' il momento
+        zero da cui si misura chi ha risposto piu' velocemente per il premio finale."""
+        self.round_open_at = time.time()
+
     def submit_guest_answer(self, guest_id: str, choice: int) -> Optional[bool]:
         if self.phase != Phase.GUESTS_ANSWERING:
             return None
         if guest_id in self.guest_answers:
             return None
-        self.guest_answers[guest_id] = {"choice": choice, "at": time.time()}
+        at = time.time()
+        self.guest_answers[guest_id] = {"choice": choice, "at": at}
         is_correct = choice == self.boss_answer
-        if is_correct and self.winner_id is None:
-            self.winner_id = guest_id
-            self.phase = Phase.ROUND_RESULT
-            if guest_id in self.guests:
-                self.guests[guest_id].score += 1
+        if is_correct and guest_id in self.guests:
+            guest = self.guests[guest_id]
+            guest.correct_answers += 1
+            if self.round_open_at is not None:
+                elapsed = at - self.round_open_at
+                if guest.fastest_correct_seconds is None or elapsed < guest.fastest_correct_seconds:
+                    guest.fastest_correct_seconds = elapsed
         return is_correct
+
+    def finalize_round_winner(self) -> Optional[str]:
+        """Dopo la finestra di risposta (20s), determina chi ha risposto correttamente
+        per primo confrontando i timestamp raccolti - il resto della suspance e' voluta."""
+        if self.phase != Phase.GUESTS_ANSWERING:
+            return None
+        correct = [
+            (gid, a["at"]) for gid, a in self.guest_answers.items()
+            if a["choice"] == self.boss_answer
+        ]
+        self.phase = Phase.ROUND_RESULT
+        if not correct:
+            self.winner_id = None
+            return None
+        correct.sort(key=lambda item: item[1])
+        winner_id = correct[0][0]
+        self.winner_id = winner_id
+        if winner_id in self.guests:
+            self.guests[winner_id].score += 1
+        return winner_id
 
     def add_guest(self, guest_id: str, name: str):
         if guest_id not in self.guests:
@@ -195,6 +232,16 @@ class GameState:
     def open_duel_challenge(self):
         self.phase = Phase.DUEL_CHALLENGE
 
+    def _record_duel_stats(self, challenger_won: bool):
+        """Aggiorna vittorie/sconfitte del solo sfidante (per i premi personalizzati finali):
+        la festeggiata non ha una classifica, e' sempre lei contro tutti."""
+        if self.challenger_id and self.challenger_id in self.guests:
+            guest = self.guests[self.challenger_id]
+            if challenger_won:
+                guest.duels_won += 1
+            else:
+                guest.duels_lost += 1
+
     def submit_duel_answer(self, responder_id: str, choice: int) -> Optional[bool]:
         """Sia l'ospite sfidante che la festeggiata rispondono alla stessa sfida:
         chi risponde correttamente per primo vince (se sbagliano entrambi, nessun danno)."""
@@ -213,8 +260,12 @@ class GameState:
                 self.damage_boss(DUEL_DAMAGE)
                 if responder_id in self.guests:
                     self.guests[responder_id].score += DUEL_WIN_BONUS_SCORE
+                self._record_duel_stats(True)
+            else:
+                self._record_duel_stats(False)
         elif len(self.duel_answers) >= 2:
             self.phase = Phase.DUEL_RESULT
+            self._record_duel_stats(False)
         return correct
 
     def duel_resolved(self) -> bool:
@@ -226,6 +277,7 @@ class GameState:
         if self.phase != Phase.DUEL_CHALLENGE:
             return False
         self.phase = Phase.DUEL_RESULT
+        self._record_duel_stats(False)
         return True
 
     def public_duel_result(self, timeout: bool = False) -> dict:
@@ -320,6 +372,64 @@ class GameState:
             return False
         self.pending_penance_heal = None
         return True
+
+    # ---- premi personalizzati del gran finale ----
+
+    def compute_awards(self) -> list[dict]:
+        guests = list(self.guests.values())
+        awards = []
+
+        speedy = [g for g in guests if g.fastest_correct_seconds is not None]
+        if speedy:
+            best = min(speedy, key=lambda g: g.fastest_correct_seconds)
+            awards.append({
+                "emoji": "⚡",
+                "title": "Il più veloce della festa",
+                "name": best.name,
+                "detail": f"{best.fastest_correct_seconds:.1f}s per rispondere",
+            })
+
+        precise = [g for g in guests if g.correct_answers > 0]
+        if precise:
+            best = max(precise, key=lambda g: g.correct_answers)
+            awards.append({
+                "emoji": "🎯",
+                "title": "Il più preciso",
+                "name": best.name,
+                "detail": f"{best.correct_answers} risposte indovinate",
+            })
+
+        champions = [g for g in guests if g.duels_won > 0]
+        if champions:
+            best = max(champions, key=lambda g: g.duels_won)
+            awards.append({
+                "emoji": "⚔️",
+                "title": "Il campione dei duelli",
+                "name": best.name,
+                "detail": f"{best.duels_won} duelli vinti",
+            })
+
+        unlucky = [g for g in guests if g.duels_lost > 0]
+        if unlucky:
+            worst = max(unlucky, key=lambda g: g.duels_lost)
+            awards.append({
+                "emoji": "😅",
+                "title": "Il più sfortunato negli scontri",
+                "name": worst.name,
+                "detail": f"{worst.duels_lost} duelli persi",
+            })
+
+        combative = [g for g in guests if (g.duels_won + g.duels_lost) > 0]
+        if combative:
+            best = max(combative, key=lambda g: g.duels_won + g.duels_lost)
+            awards.append({
+                "emoji": "🔥",
+                "title": "Il più combattivo",
+                "name": best.name,
+                "detail": f"{best.duels_won + best.duels_lost} duelli affrontati",
+            })
+
+        return awards
 
     def public_state(self) -> dict:
         q = self.current_question

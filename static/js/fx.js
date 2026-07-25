@@ -204,6 +204,29 @@ function stopCountdownBar(el) {
     el.style.animation = "none";
 }
 
+function buildEqualizer(count = 7) {
+    const wrap = document.createElement("div");
+    wrap.className = "equalizer";
+    for (let i = 0; i < count; i++) {
+        const bar = document.createElement("div");
+        bar.className = "eq-bar";
+        bar.style.animationDuration = `${0.6 + Math.random() * 0.6}s`;
+        bar.style.animationDelay = `${Math.random() * 0.5}s`;
+        wrap.appendChild(bar);
+    }
+    return wrap;
+}
+
+function fxVibrate(pattern) {
+    if (navigator.vibrate) {
+        try {
+            navigator.vibrate(pattern);
+        } catch (e) {
+            // dispositivo senza supporto reale nonostante l'API esista: si ignora
+        }
+    }
+}
+
 // ---- Gran finale: la Laureata sconfitta + rivelazione classifica con suspance ----
 
 const FX_DEFEAT_PHOTO = "/resources/silvia_drago1.png";
@@ -272,7 +295,8 @@ function fxGrandFinale({ onReveal } = {}) {
     }, 1400);
 }
 
-function fxRevealLeaderboard(leaderboard) {
+function fxRevealLeaderboard(leaderboard, awards = [], opts = {}) {
+    const playSfx = opts.playSfx;
     const finale = document.getElementById("fxFinaleOverlay");
     if (finale) finale.remove();
     const existingBoard = document.getElementById("fxLeaderboardOverlay");
@@ -291,84 +315,128 @@ function fxRevealLeaderboard(leaderboard) {
     suspense.className = "fx-leaderboard-suspense";
     overlay.appendChild(suspense);
 
+    const awardsList = document.createElement("div");
+    awardsList.className = "fx-award-list";
+    overlay.appendChild(awardsList);
+
     const list = document.createElement("div");
     list.className = "fx-leaderboard-list";
     overlay.appendChild(list);
 
     document.body.appendChild(overlay);
 
-    if (!leaderboard || leaderboard.length === 0) {
-        suspense.textContent = "Nessun punteggio registrato...";
-        return;
-    }
-
-    const sorted = leaderboard; // gia' ordinata dal server, dal 1 posto in giu'
-    const winner = sorted[0];
-    const others = sorted.slice(1).reverse(); // dal peggiore (ultimo) al 2 posto
-
-    let index = 0;
-
     function pulseSuspense(text) {
         suspense.textContent = text;
         suspense.classList.remove("fx-suspense-pulse");
         void suspense.offsetWidth;
         suspense.classList.add("fx-suspense-pulse");
+        if (playSfx) playSfx("drumroll");
     }
 
-    function revealNext() {
-        if (index >= others.length) {
-            revealWinner();
+    let awardIndex = 0;
+    function revealNextAward() {
+        if (!awards || awardIndex >= awards.length) {
+            startRankingReveal();
             return;
         }
-        const entry = others[index];
-        const rank = sorted.length - index;
-        pulseSuspense(`🥁 In posizione ${rank}°...`);
+        const award = awards[awardIndex];
+        pulseSuspense(`🥁 Premio: ${award.title}...`);
         setTimeout(() => {
-            const row = document.createElement("div");
-            row.className = "fx-leaderboard-row";
-            const rankEl = document.createElement("span");
-            rankEl.className = "fx-leaderboard-rank";
-            rankEl.textContent = `${rank}°`;
-            const nameEl = document.createElement("span");
-            nameEl.className = "fx-leaderboard-name";
-            nameEl.textContent = entry.name;
-            const scoreEl = document.createElement("span");
-            scoreEl.className = "fx-leaderboard-score";
-            scoreEl.textContent = `${entry.score} pt`;
-            row.appendChild(rankEl);
-            row.appendChild(nameEl);
-            row.appendChild(scoreEl);
-            list.appendChild(row);
-            fxConfetti(12, 1400);
-            index += 1;
-            setTimeout(revealNext, 1500);
-        }, 1300);
+            const card = document.createElement("div");
+            card.className = "fx-award-card";
+            const emoji = document.createElement("div");
+            emoji.className = "fx-award-emoji";
+            emoji.textContent = award.emoji;
+            const titleEl = document.createElement("div");
+            titleEl.className = "fx-award-title";
+            titleEl.textContent = award.title;
+            const nameEl = document.createElement("div");
+            nameEl.className = "fx-award-name";
+            nameEl.textContent = award.name;
+            const detailEl = document.createElement("div");
+            detailEl.className = "fx-award-detail";
+            detailEl.textContent = award.detail;
+            card.appendChild(emoji);
+            card.appendChild(titleEl);
+            card.appendChild(nameEl);
+            card.appendChild(detailEl);
+            awardsList.appendChild(card);
+            fxConfetti(20, 1800);
+            awardIndex += 1;
+            setTimeout(revealNextAward, 2200);
+        }, 1500);
     }
 
-    function revealWinner() {
-        pulseSuspense("🥁 E il vincitore della festa è......");
-        setTimeout(() => {
-            suspense.textContent = "";
-            const banner = document.createElement("div");
-            banner.className = "fx-winner-banner-epic";
-            const crown = document.createElement("div");
-            crown.className = "fx-winner-crown";
-            crown.textContent = "👑";
-            const name = document.createElement("div");
-            name.className = "fx-winner-name";
-            name.textContent = winner.name;
-            const caption = document.createElement("div");
-            caption.className = "fx-winner-caption";
-            caption.textContent = `Vincitore assoluto con ${winner.score} punti!`;
-            banner.appendChild(crown);
-            banner.appendChild(name);
-            banner.appendChild(caption);
-            overlay.appendChild(banner);
-            fxConfetti(160, 5000);
-            fxFire(30);
-            fxScreenShake();
-        }, 2200);
+    function startRankingReveal() {
+        if (!leaderboard || leaderboard.length === 0) {
+            suspense.textContent = "Nessun punteggio registrato...";
+            return;
+        }
+
+        const sorted = leaderboard; // gia' ordinata dal server, dal 1 posto in giu'
+        const winner = sorted[0];
+        const others = sorted.slice(1).reverse(); // dal peggiore (ultimo) al 2 posto
+
+        let index = 0;
+
+        function revealNext() {
+            if (index >= others.length) {
+                revealWinner();
+                return;
+            }
+            const entry = others[index];
+            const rank = sorted.length - index;
+            pulseSuspense(`🥁 In posizione ${rank}°...`);
+            setTimeout(() => {
+                const row = document.createElement("div");
+                row.className = "fx-leaderboard-row";
+                const rankEl = document.createElement("span");
+                rankEl.className = "fx-leaderboard-rank";
+                rankEl.textContent = `${rank}°`;
+                const nameEl = document.createElement("span");
+                nameEl.className = "fx-leaderboard-name";
+                nameEl.textContent = entry.name;
+                const scoreEl = document.createElement("span");
+                scoreEl.className = "fx-leaderboard-score";
+                scoreEl.textContent = `${entry.score} pt`;
+                row.appendChild(rankEl);
+                row.appendChild(nameEl);
+                row.appendChild(scoreEl);
+                list.appendChild(row);
+                fxConfetti(12, 1400);
+                index += 1;
+                setTimeout(revealNext, 1500);
+            }, 1300);
+        }
+
+        function revealWinner() {
+            pulseSuspense("🥁 E il vincitore della festa è......");
+            setTimeout(() => {
+                suspense.textContent = "";
+                const banner = document.createElement("div");
+                banner.className = "fx-winner-banner-epic";
+                const crown = document.createElement("div");
+                crown.className = "fx-winner-crown";
+                crown.textContent = "👑";
+                const name = document.createElement("div");
+                name.className = "fx-winner-name";
+                name.textContent = winner.name;
+                const caption = document.createElement("div");
+                caption.className = "fx-winner-caption";
+                caption.textContent = `Vincitore assoluto con ${winner.score} punti!`;
+                banner.appendChild(crown);
+                banner.appendChild(name);
+                banner.appendChild(caption);
+                overlay.appendChild(banner);
+                fxConfetti(160, 5000);
+                fxFire(30);
+                fxScreenShake();
+                if (playSfx) playSfx("sting");
+            }, 2200);
+        }
+
+        revealNext();
     }
 
-    revealNext();
+    revealNextAward();
 }

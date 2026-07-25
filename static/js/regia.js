@@ -20,6 +20,7 @@ const lobbyGateBadge = document.getElementById('lobbyGateBadge');
 const startGameBtn = document.getElementById('startGameBtn');
 const winnerLine = document.getElementById('winnerLine');
 const leaderboard = document.getElementById('leaderboard');
+const answerTicker = document.getElementById('answerTicker');
 
 const duelScreen = document.getElementById('duelScreen');
 const duelChallengerLine = document.getElementById('duelChallengerLine');
@@ -107,6 +108,13 @@ function handleMessage(msg) {
         // keepalive, nessuna azione necessaria
     } else if (msg.type === 'log') {
         addLogEntry(msg.payload.ts, msg.payload.text);
+    } else if (msg.type === 'answer_progress') {
+        if (answerTicker) {
+            const chip = document.createElement('span');
+            chip.className = 'answer-ticker-chip';
+            chip.textContent = `✍️ ${msg.payload.name}`;
+            answerTicker.appendChild(chip);
+        }
     } else if (msg.type === 'return_home') {
         hideDuelScreen();
         penanceScreen.style.display = 'none';
@@ -117,6 +125,13 @@ function handleMessage(msg) {
         hpLabel.textContent = `HP ${s.hp}/${s.max_hp}`;
         phaseBadge.textContent = `fase: ${s.phase}`;
         lobbyCard.style.display = s.phase === 'lobby' ? 'block' : 'none';
+        const isEnraged = s.hp > 0 && pct < 25;
+        document.body.classList.toggle('enrage-mode', isEnraged);
+        if (isEnraged) {
+            sfxStartHeartbeat();
+        } else {
+            sfxStopHeartbeat();
+        }
         roundBadge.textContent = `round ${s.round}/${s.total_rounds}`;
         onlineBadge.textContent = `${s.guests_online} online`;
         answersBadge.textContent = `${s.answers_count} risposte`;
@@ -132,6 +147,8 @@ function handleMessage(msg) {
         renderLeaderboard(leaderboard, s.leaderboard);
         if (s.phase === 'game_over' && !gameOverShown) {
             gameOverShown = true;
+            sfxStopHeartbeat();
+            sfxPlay('explosion');
             fxGrandFinale({
                 onReveal: () => ws.send(JSON.stringify({ type: 'reveal_leaderboard' })),
             });
@@ -157,8 +174,10 @@ function handleMessage(msg) {
         penanceConfirmRow.style.display = 'none';
         penanceRevealHeal.textContent = '❌ Non confermata: nessun HP guadagnato.';
     } else if (msg.type === 'winner') {
-        fxFire();
-        fxConfetti(40);
+        if (msg.payload.name) {
+            fxFire();
+            fxConfetti(40);
+        }
     } else if (msg.type === 'duel_start') {
         fxSkull();
         penanceScreen.style.display = 'none';
@@ -195,6 +214,7 @@ function handleMessage(msg) {
         }
         duelMedia.innerHTML = '';
         if (msg.payload.category === 'musica' && msg.payload.media) {
+            duelMedia.appendChild(buildEqualizer());
             const audio = document.createElement('audio');
             audio.controls = true;
             audio.autoplay = true;
@@ -230,7 +250,7 @@ function handleMessage(msg) {
             duelMedia.appendChild(img);
         } else if (msg.payload.prompt) {
             const div = document.createElement('div');
-            div.className = 'status';
+            div.className = msg.payload.category === 'data' ? 'status data-parchment' : 'status';
             div.style.fontSize = '2rem';
             div.style.fontWeight = 'bold';
             div.textContent = msg.payload.prompt;
@@ -263,6 +283,7 @@ function handleMessage(msg) {
             pulseShake(bossPortrait);
             pulseHpFlash(hpBar, hpBarWrap, 'damage');
             fxScreenShake();
+            sfxPlay('explosion');
             fxFire();
             fxConfetti(50);
             fxPhotoFlash('win', `${msg.payload.winner_name} vince lo scontro!`);
@@ -283,19 +304,23 @@ function handleMessage(msg) {
     } else if (msg.type === 'boss_hit') {
         pulseShake(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'damage');
+        sfxPlay('explosion');
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
         duelSendPopup.style.display = 'none';
         if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
     } else if (msg.type === 'reveal_leaderboard') {
-        fxRevealLeaderboard(msg.payload.leaderboard);
+        fxRevealLeaderboard(msg.payload.leaderboard, msg.payload.awards, { playSfx: sfxPlay });
     } else if (msg.type === 'reset') {
         hideDuelScreen();
         penanceScreen.style.display = 'none';
         duelSendPopup.style.display = 'none';
         stopCountdownBar(duelTimerBar);
         gameOverShown = false;
+        sfxStopHeartbeat();
+        document.body.classList.remove('enrage-mode');
+        if (answerTicker) answerTicker.innerHTML = '';
         if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         const finaleEl = document.getElementById('fxFinaleOverlay');
@@ -306,7 +331,10 @@ function handleMessage(msg) {
 }
 
 startGameBtn.onclick = () => ws.send(JSON.stringify({ type: 'start_game' }));
-document.getElementById('startBtn').onclick = () => ws.send(JSON.stringify({ type: 'start_round' }));
+document.getElementById('startBtn').onclick = () => {
+    if (answerTicker) answerTicker.innerHTML = '';
+    ws.send(JSON.stringify({ type: 'start_round' }));
+};
 document.getElementById('startDuelBtn').onclick = () => ws.send(JSON.stringify({ type: 'start_duel' }));
 document.getElementById('cancelDuelBtn').onclick = () => ws.send(JSON.stringify({ type: 'cancel_duel' }));
 document.getElementById('dmg10').onclick = () => ws.send(JSON.stringify({ type: 'damage_boss', amount: 10 }));
@@ -334,6 +362,7 @@ document.getElementById('resetBtn').onclick = () => {
 enterBtn.onclick = () => {
     const key = keyInput.value.trim();
     if (!key) return;
+    sfxUnlock();
     connect(key);
 };
 
