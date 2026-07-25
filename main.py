@@ -34,35 +34,56 @@ duel_timeout_task: asyncio.Task | None = None
 duel_countdown_task: asyncio.Task | None = None
 
 
+SEND_TIMEOUT_SECONDS = 4.0  # oltre questo tempo una connessione si considera bloccata/morta
+
+
 class Hub:
+    """Con molti invitati collegati, i messaggi vanno inviati in PARALLELO: inviarli uno alla
+    volta (in sequenza) farebbe arrivare la domanda prima a chi e' stato connesso per primo,
+    creando un vantaggio ingiusto, e una connessione bloccata rallenterebbe tutti gli altri."""
+
     def __init__(self):
         self.regia: set[WebSocket] = set()
         self.boss: set[WebSocket] = set()
         self.guests: dict[str, WebSocket] = {}
 
     @staticmethod
-    async def _send(ws: WebSocket, data: dict):
+    async def _send(ws: WebSocket, data: dict) -> bool:
         try:
-            await ws.send_json(data)
+            await asyncio.wait_for(ws.send_json(data), timeout=SEND_TIMEOUT_SECONDS)
+            return True
         except Exception:
-            pass
+            return False
 
     async def to_regia(self, data: dict):
-        for ws in list(self.regia):
-            await self._send(ws, data)
+        conns = list(self.regia)
+        if not conns:
+            return
+        results = await asyncio.gather(*(self._send(ws, data) for ws in conns))
+        for ws, ok in zip(conns, results):
+            if not ok:
+                self.regia.discard(ws)
 
     async def to_boss(self, data: dict):
-        for ws in list(self.boss):
-            await self._send(ws, data)
+        conns = list(self.boss)
+        if not conns:
+            return
+        results = await asyncio.gather(*(self._send(ws, data) for ws in conns))
+        for ws, ok in zip(conns, results):
+            if not ok:
+                self.boss.discard(ws)
 
     async def to_guests(self, data: dict):
-        for ws in list(self.guests.values()):
-            await self._send(ws, data)
+        items = list(self.guests.items())
+        if not items:
+            return
+        results = await asyncio.gather(*(self._send(ws, data) for _, ws in items))
+        for (guest_id, _), ok in zip(items, results):
+            if not ok:
+                self.guests.pop(guest_id, None)
 
     async def to_all(self, data: dict):
-        await self.to_regia(data)
-        await self.to_boss(data)
-        await self.to_guests(data)
+        await asyncio.gather(self.to_regia(data), self.to_boss(data), self.to_guests(data))
 
 
 hub = Hub()

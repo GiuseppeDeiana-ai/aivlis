@@ -54,6 +54,7 @@ const MAX_LOG_ENTRIES = 60;
 
 let ws = null;
 let gameOverShown = false;
+let currentMusicAudio = null;
 
 function addLogEntry(ts, text) {
     const time = new Date(ts * 1000).toLocaleTimeString('it-IT');
@@ -166,6 +167,10 @@ function handleMessage(msg) {
         duelCategoryTitle.textContent = `Indovina la ${categoryLabel(msg.payload.category).toLowerCase()}`;
         fxThemeParticles(msg.payload.category);
         startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
+        if (currentMusicAudio) {
+            currentMusicAudio.pause();
+            currentMusicAudio = null;
+        }
         duelMedia.innerHTML = '';
         if (msg.payload.category === 'musica' && msg.payload.media) {
             const audio = document.createElement('audio');
@@ -174,6 +179,19 @@ function handleMessage(msg) {
             audio.src = `/static/media/musica/${encodeURIComponent(msg.payload.media)}`;
             audio.play().catch(() => {});
             duelMedia.appendChild(audio);
+            currentMusicAudio = audio;
+
+            const stopMusicBtn = document.createElement('button');
+            stopMusicBtn.className = 'primary danger';
+            stopMusicBtn.textContent = '⏹️ Interrompi la canzone';
+            stopMusicBtn.style.display = 'block';
+            stopMusicBtn.style.margin = '10px auto 0';
+            stopMusicBtn.onclick = () => {
+                audio.pause();
+                stopMusicBtn.disabled = true;
+                stopMusicBtn.textContent = '⏹️ Canzone interrotta';
+            };
+            duelMedia.appendChild(stopMusicBtn);
         } else if (msg.payload.media) {
             const img = document.createElement('img');
             img.src = `/static/media/${msg.payload.category}/${encodeURIComponent(msg.payload.media)}`;
@@ -237,12 +255,14 @@ function handleMessage(msg) {
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
         duelSendPopup.style.display = 'none';
+        if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
     } else if (msg.type === 'reset') {
         hideDuelScreen();
         penanceScreen.style.display = 'none';
         duelSendPopup.style.display = 'none';
         stopCountdownBar(duelTimerBar);
         gameOverShown = false;
+        if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
     }
 }
 
