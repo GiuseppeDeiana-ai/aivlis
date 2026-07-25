@@ -1611,3 +1611,100 @@ body.enrage-mode .boss-name-tag {
     body.spectate-page .duel-vs-avatar { width: 110px; height: 110px; }
     body.spectate-page .chat-messages { height: 340px; }
 }
+
+/* ---- Layout compatto per invitati e festeggiata: giocano sempre da cellulare, quindi
+   meno spazio sprecato in padding/margini/dimensioni per vedere piu' contenuto a schermo
+   senza scroll continuo ---- */
+
+body.guest-page,
+body.boss-page {
+    padding: 10px;
+}
+
+body.guest-page h1,
+body.boss-page h1 {
+    font-size: 1.5rem;
+    margin: 4px 0;
+}
+
+body.guest-page .card,
+body.boss-page .card {
+    padding: 14px;
+    margin: 6px 0;
+    border-radius: 14px;
+}
+
+body.guest-page .boss-portrait-wrap,
+body.boss-page .boss-portrait-wrap {
+    margin-bottom: 4px;
+}
+
+body.guest-page .boss-portrait,
+body.boss-page .boss-portrait {
+    width: 150px;
+    height: 150px;
+}
+
+body.guest-page .boss-name-tag,
+body.boss-page .boss-name-tag {
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+body.guest-page .hp-bar-wrap,
+body.boss-page .hp-bar-wrap {
+    height: 20px;
+    margin: 6px 0;
+}
+
+body.guest-page .rules-list li,
+body.boss-page .rules-list li {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+body.guest-page .status,
+body.boss-page .status {
+    font-size: 0.9rem;
+    margin: 4px 0;
+}
+
+body.guest-page button.option,
+body.boss-page button.option {
+    padding: 14px 8px;
+    font-size: 0.95rem;
+}
+
+body.guest-page .wheel-wrap,
+body.boss-page .wheel-wrap {
+    width: 210px;
+    height: 210px;
+    margin: 6px auto 14px;
+}
+
+body.guest-page .chat-messages,
+body.boss-page .chat-messages {
+    height: 180px;
+}
+
+/* ---- Regia: postazione da PC, sfrutta lo spazio orizzontale invece di restare
+   incolonnata come sui cellulari degli altri ruoli ---- */
+
+@media (min-width: 900px) {
+    body.regia-page #panel { max-width: 1180px; }
+    body.regia-page .regia-top-row {
+        display: flex;
+        gap: 16px;
+        align-items: stretch;
+    }
+    body.regia-page .regia-top-row > .card { flex: 1; max-width: none; margin: 10px 0; }
+    body.regia-page .regia-main-columns {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    body.regia-page .regia-col { flex: 1; min-width: 0; }
+    body.regia-page .regia-col .card { max-width: none; }
+    body.regia-page .chat-messages { height: 300px; }
+    body.regia-page .log-panel { height: 300px; }
+}

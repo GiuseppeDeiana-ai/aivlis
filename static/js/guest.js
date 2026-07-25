@@ -508,7 +508,7 @@ function updateState(state) {
     const pct = Math.max(0, Math.min(100, (state.hp / state.max_hp) * 100));
     hpBar.style.width = pct + '%';
     hpLabel.textContent = `HP ${state.hp}/${state.max_hp}`;
-    lobbyCard.style.display = state.phase === 'lobby' ? 'block' : 'none';
+    lobbyCard.style.display = fxShouldShowRules('guest', state.phase) ? 'block' : 'none';
     if (answersCountLine) {
         answersCountLine.textContent = state.phase === 'guests_answering'
             ? `📊 ${state.answers_count} ${state.answers_count === 1 ? 'persona ha' : 'persone hanno'} già risposto...`

@@ -45,6 +45,7 @@ class Guest:
     max_answer_streak: int = 0
     total_answers: int = 0
     last_chat_at: Optional[float] = None
+    chat_message_count: int = 0
 
 
 class GameState:
@@ -68,6 +69,7 @@ class GameState:
         self.chat_messages: list[dict] = []
 
         self.used_challenge_ids: set[str] = set()
+        self.used_duel_categories: set[str] = set()
         self.challenger_id: Optional[str] = None
         self.duel_category: Optional[str] = None
         self.duel_challenge: Optional[dict] = None
@@ -89,8 +91,12 @@ class GameState:
     def start_round(self) -> bool:
         """Le domande classiche sono pescate a caso senza ripetizioni finche' non sono
         state usate tutte; a quel punto il mazzo si rimescola e si continua all'infinito -
-        cosi' la partita non finisce mai per "esaurimento domande", solo per HP a zero."""
+        cosi' la partita non finisce mai per "esaurimento domande", solo per HP a zero.
+        Consentito solo tra un round e il successivo: un doppio click accidentale della
+        regia durante un round o un duello in corso non deve poterlo interrompere/corrompere."""
         if not self.questions:
+            return False
+        if self.phase not in (Phase.LOBBY, Phase.ROUND_RESULT, Phase.DUEL_RESULT):
             return False
         if len(self.used_question_indices) >= len(self.questions):
             self.used_question_indices = set()
@@ -163,6 +169,7 @@ class GameState:
         if guest.last_chat_at is not None and now - guest.last_chat_at < CHAT_COOLDOWN_SECONDS:
             return None
         guest.last_chat_at = now
+        guest.chat_message_count += 1
         message = {
             "id": guest_id,
             "name": guest.name,
@@ -238,6 +245,7 @@ class GameState:
         self.winner_id = None
         self.hp = self.max_hp
         self.used_challenge_ids = set()
+        self.used_duel_categories = set()
         self.challenger_id = None
         self.duel_category = None
         self.duel_challenge = None
@@ -289,9 +297,16 @@ class GameState:
         return challenge
 
     def spin_wheel(self) -> Optional[str]:
+        """Le categorie escono a caso ma senza ripetizioni finche' non sono uscite tutte
+        (stesso principio delle domande classiche): se esce "videogioco" non puo' riuscire
+        di nuovo finche' non sono uscite anche tutte le altre; poi il giro si rimescola."""
         if self.phase != Phase.DUEL_WHEEL:
             return None
-        category = random.choice(DUEL_CATEGORIES)
+        if len(self.used_duel_categories) >= len(DUEL_CATEGORIES):
+            self.used_duel_categories = set()
+        pool = [c for c in DUEL_CATEGORIES if c not in self.used_duel_categories]
+        category = random.choice(pool)
+        self.used_duel_categories.add(category)
         self.duel_category = category
         self.duel_challenge = self._pick_challenge(category)
         self.duel_answers = {}
@@ -545,6 +560,16 @@ class GameState:
                 "title": "Il cucchiaio di legno",
                 "name": worst.name,
                 "detail": f"solo {worst.score} punti, ma tanto cuore",
+            })
+
+        chatty = [g for g in guests if g.chat_message_count > 0]
+        if chatty:
+            best = max(chatty, key=lambda g: g.chat_message_count)
+            awards.append({
+                "emoji": "💬",
+                "title": "Il più chiacchierone",
+                "name": best.name,
+                "detail": f"{best.chat_message_count} messaggi scritti in chat",
             })
 
         return awards

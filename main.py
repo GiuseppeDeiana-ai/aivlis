@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from game import BOSS_ID, MAX_CHAT_LENGTH, GameState
+from game import BOSS_ID, MAX_CHAT_LENGTH, GameState, Phase
 
 BASE_DIR = Path(__file__).parent
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "110201")
@@ -227,6 +227,8 @@ async def run_penance_sequence():
     await log("🎡 La festeggiata gira la ruota delle penitenze...")
     await hub.to_all({"type": "penance_spin", "payload": {"index": result["index"], "count": len(game.penances)}})
     await asyncio.sleep(WHEEL_SPIN_SECONDS)
+    if game.pending_penance_heal is None:
+        return  # la partita e' stata resettata (o la penitenza gia' risolta) durante l'animazione
     await hub.to_all({"type": "penance_result", "payload": result})
     await broadcast_state()
     await log(f"❤️ Penitenza estratta: \"{result['text']}\" — in attesa di conferma dalla regia (+{result['heal']} HP)")
@@ -239,6 +241,8 @@ async def run_wheel_sequence():
     await log(f"🎡 Ruota dello scontro girata: categoria \"{category}\"")
     await hub.to_all({"type": "wheel_result", "payload": {"category": category}})
     await asyncio.sleep(WHEEL_SPIN_SECONDS)
+    if not game.duel_awaiting_confirm or game.duel_category != category:
+        return  # la regia ha annullato lo scontro mentre la ruota stava ancora girando
     await hub.to_regia({"type": "duel_ready_confirm", "payload": {"category": category}})
     await log("🎯 Sfida pronta: in attesa che la regia la invii a tutti...")
 
@@ -262,6 +266,8 @@ async def run_round_open_sequence():
     await hub.to_all({"type": "round_countdown", "payload": {"seconds": ROUND_COUNTDOWN_SECONDS}})
     await asyncio.sleep(ROUND_COUNTDOWN_SECONDS)
     q = game.current_question
+    if q is None or game.phase != Phase.GUESTS_ANSWERING:
+        return  # la partita e' stata resettata (o il round interrotto) durante il conto alla rovescia
     game.mark_round_open()
     payload = {"text": q["text"], "options": q["options"], "seconds": ROUND_REVEAL_SECONDS}
     await hub.to_guests({"type": "round_open", "payload": payload})
@@ -524,7 +530,7 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                     await hub.to_spectators({"type": "wait_boss", "payload": {}})
                     await log(f"▶️ Domanda {game.round_index + 1}/{len(game.questions)} avviata.")
                 else:
-                    await log("ℹ️ Non ci sono altre domande da avviare.")
+                    await log("ℹ️ Impossibile avviare una nuova domanda ora (round o scontro già in corso, o partita finita).")
                 await broadcast_state()
             elif t == "start_duel":
                 if game.start_duel():

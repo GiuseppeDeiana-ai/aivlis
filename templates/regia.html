@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Regia - Laurea di Silvia">
 <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version }}">
 </head>
-<body>
+<body class="regia-page">
 <h1>Regia</h1>
 
 <div id="keyScreen" class="card center">
@@ -21,15 +21,17 @@
 
 <div id="panel" style="display:none; width:100%; max-width:480px;">
 
-    <div class="card center">
-        <h3>QR per gli invitati</h3>
-        <div class="qr-box"><img src="/qr.png" alt="QR Code invitati"></div>
-    </div>
+    <div class="regia-top-row">
+        <div class="card center">
+            <h3>QR per gli invitati</h3>
+            <div class="qr-box"><img src="/qr.png" alt="QR Code invitati"></div>
+        </div>
 
-    <div class="card center">
-        <h3>👀 QR per gli spettatori</h3>
-        <p class="status">Per chi non gioca ma vuole godersi lo spettacolo</p>
-        <div class="qr-box"><img src="/qr_spectate.png" alt="QR Code spettatori"></div>
+        <div class="card center">
+            <h3>👀 QR per gli spettatori</h3>
+            <p class="status">Per chi non gioca ma vuole godersi lo spettacolo</p>
+            <div class="qr-box"><img src="/qr_spectate.png" alt="QR Code spettatori"></div>
+        </div>
     </div>
 
     <div class="boss-portrait-wrap">
@@ -42,17 +44,8 @@
     <div class="hp-bar-wrap" id="hpBarWrap"><div class="hp-bar" id="hpBar" style="width:100%"></div></div>
     <div class="hp-label" id="hpLabel">HP 100/100</div>
 
-    <div class="card" id="lobbyCard">
-        <h3>📖 Come si gioca (promemoria)</h3>
-        <ul class="rules-list">
-            <li>👑 La festeggiata risponde prima a ogni domanda</li>
-            <li>🙋 Il primo che la indovina la sfida a duello</li>
-            <li>🎡 Nel duello si gira la ruota (Musica/Film/Videogiochi/Date)</li>
-            <li>⚔️ Chi risponde prima e giusto vince: ospite = danno, lei = salva</li>
-            <li>❤️ Lei può girare la Ruota delle Penitenze per curarsi</li>
-            <li>🏆 Obiettivo: azzerare gli HP della festeggiata!</li>
-        </ul>
-    </div>
+    <div class="regia-main-columns">
+    <div class="regia-col">
 
     <div class="card center">
         <div class="badge" id="phaseBadge">fase: lobby</div>
@@ -109,6 +102,25 @@
         </div>
     </div>
 
+    </div>
+    <div class="regia-col">
+
+    <div class="card center">
+        <h3>Classifica</h3>
+        <div class="leaderboard-list" id="leaderboard"></div>
+    </div>
+
+    <div class="card">
+        <h3 class="center">💬 Chat della festa</h3>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="row">
+            <button class="primary danger" id="clearChatBtn">🧹 Svuota chat</button>
+        </div>
+    </div>
+
+    </div>
+    </div>
+
     <div class="card center" id="penanceScreen" style="display:none;">
         <h3>Ruota delle Penitenze</h3>
         <div class="wheel-wrap" id="penanceWheelWrap" style="display:none;"></div>
@@ -138,19 +150,6 @@
         </div>
         <div class="card center" id="duelResultCard" style="display:none;">
             <div id="duelResultBanner"></div>
-        </div>
-    </div>
-
-    <div class="card center">
-        <h3>Classifica</h3>
-        <div class="leaderboard-list" id="leaderboard"></div>
-    </div>
-
-    <div class="card">
-        <h3 class="center">💬 Chat della festa</h3>
-        <div class="chat-messages" id="chatMessages"></div>
-        <div class="row">
-            <button class="primary danger" id="clearChatBtn">🧹 Svuota chat</button>
         </div>
     </div>
 </div>

@@ -283,7 +283,7 @@ function handleMessage(msg) {
         const pct = Math.max(0, Math.min(100, (msg.payload.hp / msg.payload.max_hp) * 100));
         hpBar.style.width = pct + '%';
         hpLabel.textContent = `HP ${msg.payload.hp}/${msg.payload.max_hp}`;
-        lobbyCard.style.display = msg.payload.phase === 'lobby' ? 'block' : 'none';
+        lobbyCard.style.display = fxShouldShowRules('boss', msg.payload.phase) ? 'block' : 'none';
         document.body.classList.toggle('enrage-mode', msg.payload.hp > 0 && pct < 25);
         if (!halfHpAnnounced && msg.payload.hp > 0 && pct <= 50) {
             halfHpAnnounced = true;

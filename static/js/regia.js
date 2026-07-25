@@ -10,7 +10,6 @@ const bossPortraitImg = document.getElementById('bossPortraitImg');
 
 startPortraitRotation(bossPortraitImg);
 
-const lobbyCard = document.getElementById('lobbyCard');
 const phaseBadge = document.getElementById('phaseBadge');
 const roundBadge = document.getElementById('roundBadge');
 const onlineBadge = document.getElementById('onlineBadge');
@@ -163,7 +162,6 @@ function handleMessage(msg) {
         hpBar.style.width = pct + '%';
         hpLabel.textContent = `HP ${s.hp}/${s.max_hp}`;
         phaseBadge.textContent = `fase: ${s.phase}`;
-        lobbyCard.style.display = s.phase === 'lobby' ? 'block' : 'none';
         const isEnraged = s.hp > 0 && pct < 25;
         document.body.classList.toggle('enrage-mode', isEnraged);
         if (isEnraged) {

@@ -507,6 +507,18 @@ function fxRevealLeaderboard(leaderboard, awards = [], opts = {}) {
     revealNextAward();
 }
 
+// ---- Regole "Come si gioca": visibili solo alla primissima connessione di un dispositivo,
+// non devono ripresentarsi ad ogni ritorno in lobby (es. dopo un reset a partita in corso) ----
+
+function fxShouldShowRules(roleKey, phase) {
+    const key = `rules_seen_${roleKey}`;
+    if (phase !== 'lobby') {
+        localStorage.setItem(key, '1');
+        return false;
+    }
+    return !localStorage.getItem(key);
+}
+
 // ---- Vignetta di tensione durante il conto alla rovescia del duello ----
 
 let fxVignetteTimeout = null;

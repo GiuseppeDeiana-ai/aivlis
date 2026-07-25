@@ -354,7 +354,7 @@ function updateState(state) {
     hpBar.style.width = pct + '%';
     hpLabel.textContent = `HP ${state.hp}/${state.max_hp}`;
     roundLine.textContent = state.total_rounds > 0 ? `Domanda ${state.round}/${state.total_rounds}` : '';
-    lobbyCard.style.display = state.phase === 'lobby' ? 'block' : 'none';
+    lobbyCard.style.display = fxShouldShowRules('spectate', state.phase) ? 'block' : 'none';
     document.body.classList.toggle('enrage-mode', state.hp > 0 && pct < 25);
     if (!halfHpAnnounced && state.hp > 0 && pct <= 50) {
         halfHpAnnounced = true;
