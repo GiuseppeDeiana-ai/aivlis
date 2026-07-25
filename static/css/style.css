@@ -862,3 +862,172 @@ input[type="text"] {
     0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 78, 80, 0.5); }
     50% { transform: scale(1.04); box-shadow: 0 0 0 14px rgba(255, 78, 80, 0); }
 }
+
+/* ---- Gran finale: la Laureata sconfitta + rivelazione classifica ---- */
+
+.fx-finale-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: radial-gradient(circle, rgba(215, 38, 61, 0.35), rgba(10, 5, 25, 0.96));
+    animation: fxEpicIn 0.6s ease forwards, finaleFlash 1.8s ease-out;
+    text-align: center;
+    padding: 24px;
+}
+
+@keyframes finaleFlash {
+    0% { background-color: rgba(255, 255, 255, 0.9); }
+    100% { background-color: transparent; }
+}
+
+.fx-finale-title {
+    font-size: 1.7rem;
+    background: linear-gradient(90deg, #ff4e50, #f9d423, #d7263d, #f9d423);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: titleGlow 3s ease-in-out infinite;
+    margin: 0;
+}
+
+.fx-finale-photo {
+    width: 240px;
+    max-width: 72vw;
+    border-radius: 18px;
+    border: 4px solid #d7263d;
+    box-shadow: 0 0 60px rgba(215, 38, 61, 0.65);
+    animation: portraitShake 2.4s ease-in-out infinite;
+}
+
+.fx-finale-waiting {
+    font-size: 1.05rem;
+    font-weight: 700;
+    opacity: 0.9;
+    animation: fx-suspense-blink 1.4s ease-in-out infinite;
+}
+
+.fx-finale-reveal-btn {
+    font-size: 1.15rem;
+    padding: 16px 30px;
+    animation: welcomeBtnPulse 1.6s ease-in-out infinite;
+}
+
+.fx-leaderboard-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    overflow-y: auto;
+    background: radial-gradient(circle at 50% 20%, rgba(157, 78, 221, 0.3), rgba(10, 5, 25, 0.97));
+    animation: fxEpicIn 0.6s ease forwards;
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.fx-leaderboard-title {
+    font-size: 1.8rem;
+    background: linear-gradient(90deg, #f9d423, #ff4e50, #9d4edd, #f9d423);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: titleGlow 3s ease-in-out infinite;
+    margin: 6px 0 4px;
+}
+
+.fx-leaderboard-suspense {
+    font-size: 1.2rem;
+    font-weight: 800;
+    min-height: 1.6rem;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.fx-suspense-pulse { animation: fx-suspense-blink 0.5s ease-in-out 2; }
+
+@keyframes fx-suspense-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+.fx-leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 420px;
+}
+
+.fx-leaderboard-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 16px;
+    animation: leaderboardRowPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes leaderboardRowPop {
+    0% { opacity: 0; transform: scale(0.7) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.fx-leaderboard-rank {
+    font-weight: 900;
+    min-width: 2.2rem;
+    opacity: 0.85;
+}
+
+.fx-leaderboard-name {
+    flex: 1;
+    text-align: left;
+    font-weight: 700;
+}
+
+.fx-leaderboard-score {
+    font-weight: 800;
+    color: #f9d423;
+}
+
+.fx-winner-banner-epic {
+    margin-top: 10px;
+    padding: 26px 30px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(249, 212, 35, 0.25), rgba(255, 78, 80, 0.2));
+    border: 3px solid #f9d423;
+    box-shadow: 0 0 80px rgba(249, 212, 35, 0.6);
+    animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fx-winner-crown {
+    font-size: 3.2rem;
+    animation: welcomePortraitPulse 1.6s ease-in-out infinite;
+}
+
+.fx-winner-name {
+    font-size: 2rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, #f9d423, #ff4e50, #9d4edd, #f9d423);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: titleGlow 3s ease-in-out infinite;
+}
+
+.fx-winner-caption {
+    font-size: 1.05rem;
+    font-weight: 700;
+    opacity: 0.92;
+    margin-top: 4px;
+}

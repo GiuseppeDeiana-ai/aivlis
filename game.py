@@ -8,7 +8,7 @@ from typing import Optional
 
 DUEL_CATEGORIES = ["musica", "film", "videogioco", "data"]
 DUEL_DAMAGE = 25
-DUEL_WIN_BONUS_SCORE = 3
+DUEL_WIN_BONUS_SCORE = 1
 BOSS_ID = "boss"
 PENANCE_HEAL = 10
 DEFAULT_PENANCE_LIMIT = 3

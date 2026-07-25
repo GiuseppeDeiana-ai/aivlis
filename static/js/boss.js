@@ -267,13 +267,15 @@ function handleMessage(msg) {
             hideDuelScreen();
             if (!gameOverShown) {
                 gameOverShown = true;
-                fxEpicEnd('lose', '💀 SEI STATA SCONFITTA! 💀', 'Gli invitati hanno vinto! Complimenti a tutti!');
+                fxGrandFinale({});
             }
         }
     } else if (msg.type === 'boss_hit') {
         statusLine.textContent = `Hai subito ${msg.payload.amount} danni!`;
         pulseShake(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'damage');
+    } else if (msg.type === 'reveal_leaderboard') {
+        fxRevealLeaderboard(msg.payload.leaderboard);
     } else if (msg.type === 'reset') {
         questionCard.style.display = 'none';
         hideDuelScreen();
@@ -283,6 +285,10 @@ function handleMessage(msg) {
         stopCountdownBar(duelTimerBar);
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         gameOverShown = false;
+        const finaleEl = document.getElementById('fxFinaleOverlay');
+        if (finaleEl) finaleEl.remove();
+        const leaderboardEl = document.getElementById('fxLeaderboardOverlay');
+        if (leaderboardEl) leaderboardEl.remove();
         statusLine.textContent = 'Il gioco e stato resettato.';
     }
 }

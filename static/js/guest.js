@@ -232,6 +232,8 @@ function handleMessage(msg) {
         penanceRevealHeal.textContent = '❌ Non confermata dalla regia: nessun HP guadagnato.';
     } else if (msg.type === 'state') {
         updateState(msg.payload);
+    } else if (msg.type === 'reveal_leaderboard') {
+        fxRevealLeaderboard(msg.payload.leaderboard);
     } else if (msg.type === 'reset') {
         questionCard.style.display = 'none';
         winnerBanner.style.display = 'none';
@@ -240,6 +242,10 @@ function handleMessage(msg) {
         stopCountdownBar(duelTimerBar);
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         gameOverShown = false;
+        const finaleEl = document.getElementById('fxFinaleOverlay');
+        if (finaleEl) finaleEl.remove();
+        const leaderboardEl = document.getElementById('fxLeaderboardOverlay');
+        if (leaderboardEl) leaderboardEl.remove();
         statusLine.textContent = 'Il gioco e stato resettato. In attesa della prossima domanda...';
     }
 }
@@ -374,7 +380,7 @@ function updateState(state) {
         statusLine.textContent = 'La laureata e stata sconfitta! Complimenti a tutti!';
         if (!gameOverShown) {
             gameOverShown = true;
-            fxEpicEnd('win', '🏆 VITTORIA! 🏆', 'La Laureata e stata sconfitta! Complimenti a tutti gli invitati!');
+            fxGrandFinale({});
         }
     }
     renderLeaderboard(leaderboard, state.leaderboard);

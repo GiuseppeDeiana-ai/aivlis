@@ -415,6 +415,12 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 await log(f"💥 Danno manuale dalla regia: -{amount} HP.")
                 await check_game_over()
                 await broadcast_state()
+            elif t == "reveal_leaderboard":
+                if game.hp <= 0:
+                    await hub.to_all({"type": "reveal_leaderboard", "payload": {"leaderboard": game.public_state()["leaderboard"]}})
+                    await log("🏆 Classifica finale rivelata a tutti dalla regia.")
+                else:
+                    await log("ℹ️ La partita non e' ancora finita, non si può rivelare la classifica.")
             elif t == "reset":
                 cancel_duel_timeout()
                 cancel_duel_countdown()

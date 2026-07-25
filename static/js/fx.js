@@ -203,3 +203,172 @@ function stopCountdownBar(el) {
     if (!el) return;
     el.style.animation = "none";
 }
+
+// ---- Gran finale: la Laureata sconfitta + rivelazione classifica con suspance ----
+
+const FX_DEFEAT_PHOTO = "/resources/silvia_drago1.png";
+
+function fxExplosions(waves = 5) {
+    const overlay = fxOverlay();
+    const pool = ["💥", "🔥", "☄️", "💣", "✨"];
+    for (let w = 0; w < waves; w++) {
+        setTimeout(() => {
+            fxScreenShake();
+            for (let i = 0; i < 10; i++) {
+                fxSpawnParticle(
+                    overlay,
+                    fxRandom(pool),
+                    10 + Math.random() * 80,
+                    10 + Math.random() * 70,
+                    60 + Math.random() * 130,
+                    false,
+                    0.7 + Math.random() * 0.5
+                );
+            }
+        }, w * 450);
+    }
+}
+
+function fxGrandFinale({ onReveal } = {}) {
+    const existing = document.getElementById("fxFinaleOverlay");
+    if (existing) existing.remove();
+
+    fxExplosions(5);
+
+    setTimeout(() => {
+        const overlay = document.createElement("div");
+        overlay.id = "fxFinaleOverlay";
+        overlay.className = "fx-finale-overlay";
+
+        const title = document.createElement("h2");
+        title.className = "fx-finale-title";
+        title.textContent = "💥 LA LAUREATA È STATA SCONFITTA! 💥";
+        overlay.appendChild(title);
+
+        const img = document.createElement("img");
+        img.className = "fx-finale-photo";
+        img.src = FX_DEFEAT_PHOTO;
+        img.alt = "";
+        overlay.appendChild(img);
+
+        if (onReveal) {
+            const btn = document.createElement("button");
+            btn.className = "primary fx-finale-reveal-btn";
+            btn.textContent = "🏆 Rivela la classifica finale";
+            btn.onclick = () => {
+                btn.disabled = true;
+                onReveal();
+            };
+            overlay.appendChild(btn);
+        } else {
+            const waiting = document.createElement("div");
+            waiting.className = "fx-finale-waiting";
+            waiting.textContent = "La regia sta per rivelare la classifica finale... 🥁";
+            overlay.appendChild(waiting);
+        }
+
+        document.body.appendChild(overlay);
+        fxConfetti(70, 3200);
+    }, 1400);
+}
+
+function fxRevealLeaderboard(leaderboard) {
+    const finale = document.getElementById("fxFinaleOverlay");
+    if (finale) finale.remove();
+    const existingBoard = document.getElementById("fxLeaderboardOverlay");
+    if (existingBoard) existingBoard.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "fxLeaderboardOverlay";
+    overlay.className = "fx-leaderboard-overlay";
+
+    const title = document.createElement("h2");
+    title.className = "fx-leaderboard-title";
+    title.textContent = "🏆 Classifica Finale 🏆";
+    overlay.appendChild(title);
+
+    const suspense = document.createElement("div");
+    suspense.className = "fx-leaderboard-suspense";
+    overlay.appendChild(suspense);
+
+    const list = document.createElement("div");
+    list.className = "fx-leaderboard-list";
+    overlay.appendChild(list);
+
+    document.body.appendChild(overlay);
+
+    if (!leaderboard || leaderboard.length === 0) {
+        suspense.textContent = "Nessun punteggio registrato...";
+        return;
+    }
+
+    const sorted = leaderboard; // gia' ordinata dal server, dal 1 posto in giu'
+    const winner = sorted[0];
+    const others = sorted.slice(1).reverse(); // dal peggiore (ultimo) al 2 posto
+
+    let index = 0;
+
+    function pulseSuspense(text) {
+        suspense.textContent = text;
+        suspense.classList.remove("fx-suspense-pulse");
+        void suspense.offsetWidth;
+        suspense.classList.add("fx-suspense-pulse");
+    }
+
+    function revealNext() {
+        if (index >= others.length) {
+            revealWinner();
+            return;
+        }
+        const entry = others[index];
+        const rank = sorted.length - index;
+        pulseSuspense(`🥁 In posizione ${rank}°...`);
+        setTimeout(() => {
+            const row = document.createElement("div");
+            row.className = "fx-leaderboard-row";
+            const rankEl = document.createElement("span");
+            rankEl.className = "fx-leaderboard-rank";
+            rankEl.textContent = `${rank}°`;
+            const nameEl = document.createElement("span");
+            nameEl.className = "fx-leaderboard-name";
+            nameEl.textContent = entry.name;
+            const scoreEl = document.createElement("span");
+            scoreEl.className = "fx-leaderboard-score";
+            scoreEl.textContent = `${entry.score} pt`;
+            row.appendChild(rankEl);
+            row.appendChild(nameEl);
+            row.appendChild(scoreEl);
+            list.appendChild(row);
+            fxConfetti(12, 1400);
+            index += 1;
+            setTimeout(revealNext, 1500);
+        }, 1300);
+    }
+
+    function revealWinner() {
+        pulseSuspense("🥁 E il vincitore della festa è......");
+        setTimeout(() => {
+            suspense.textContent = "";
+            const banner = document.createElement("div");
+            banner.className = "fx-winner-banner-epic";
+            const crown = document.createElement("div");
+            crown.className = "fx-winner-crown";
+            crown.textContent = "👑";
+            const name = document.createElement("div");
+            name.className = "fx-winner-name";
+            name.textContent = winner.name;
+            const caption = document.createElement("div");
+            caption.className = "fx-winner-caption";
+            caption.textContent = `Vincitore assoluto con ${winner.score} punti!`;
+            banner.appendChild(crown);
+            banner.appendChild(name);
+            banner.appendChild(caption);
+            overlay.appendChild(banner);
+            fxConfetti(160, 5000);
+            fxFire(30);
+            fxScreenShake();
+        }, 2200);
+    }
+
+    revealNext();
+}

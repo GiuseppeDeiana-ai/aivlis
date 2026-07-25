@@ -130,7 +130,9 @@ function handleMessage(msg) {
         renderLeaderboard(leaderboard, s.leaderboard);
         if (s.phase === 'game_over' && !gameOverShown) {
             gameOverShown = true;
-            fxEpicEnd('win', '🏆 VITTORIA! 🏆', 'La Laureata e stata sconfitta! Complimenti a tutti gli invitati!');
+            fxGrandFinale({
+                onReveal: () => ws.send(JSON.stringify({ type: 'reveal_leaderboard' })),
+            });
         }
     } else if (msg.type === 'penance_spin') {
         penanceScreen.style.display = 'block';
@@ -284,6 +286,8 @@ function handleMessage(msg) {
         duelSendPopup.style.display = 'none';
         if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
+    } else if (msg.type === 'reveal_leaderboard') {
+        fxRevealLeaderboard(msg.payload.leaderboard);
     } else if (msg.type === 'reset') {
         hideDuelScreen();
         penanceScreen.style.display = 'none';
@@ -292,6 +296,10 @@ function handleMessage(msg) {
         gameOverShown = false;
         if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
+        const finaleEl = document.getElementById('fxFinaleOverlay');
+        if (finaleEl) finaleEl.remove();
+        const leaderboardEl = document.getElementById('fxLeaderboardOverlay');
+        if (leaderboardEl) leaderboardEl.remove();
     }
 }
 
