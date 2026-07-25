@@ -15,8 +15,8 @@ from fastapi.templating import Jinja2Templates
 from game import BOSS_ID, GameState
 
 BASE_DIR = Path(__file__).parent
-ADMIN_KEY = os.environ.get("ADMIN_KEY", "regia123")
-BOSS_KEY = os.environ.get("BOSS_KEY", "boss123")
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "110201")
+BOSS_KEY = os.environ.get("BOSS_KEY", "04112017")
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "")
 
 WHEEL_SPIN_SECONDS = 3.0  # must match the CSS transition duration in static/js/wheel.js

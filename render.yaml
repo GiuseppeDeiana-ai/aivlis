@@ -7,8 +7,8 @@ services:
     startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: ADMIN_KEY
-        generateValue: true
+        value: "110201"
       - key: BOSS_KEY
-        generateValue: true
+        value: "04112017"
       - key: PUBLIC_URL
         value: ""
