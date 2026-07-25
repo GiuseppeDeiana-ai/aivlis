@@ -34,8 +34,10 @@ const duelSpectatorNote = document.getElementById('duelSpectatorNote');
 const duelResultCard = document.getElementById('duelResultCard');
 const duelResultBanner = document.getElementById('duelResultBanner');
 const duelTimerBar = document.getElementById('duelTimerBar');
+const duelVsBanner = document.getElementById('duelVsBanner');
 
 const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
+const ROUND_REVEAL_SECONDS_JS = 20; // deve corrispondere a ROUND_REVEAL_SECONDS in main.py
 
 const penanceBadge = document.getElementById('penanceBadge');
 const penanceLimitInput = document.getElementById('penanceLimitInput');
@@ -60,6 +62,7 @@ const PING_INTERVAL_MS = 20000; // deve corrispondere a PING_INTERVAL_SECONDS in
 let ws = null;
 let pingInterval = null;
 let gameOverShown = false;
+let halfHpAnnounced = false;
 let currentMusicAudio = null;
 let posterReveal = null;
 
@@ -111,8 +114,24 @@ function handleMessage(msg) {
     } else if (msg.type === 'answer_progress') {
         if (answerTicker) {
             const chip = document.createElement('span');
-            chip.className = 'answer-ticker-chip';
-            chip.textContent = `✍️ ${msg.payload.name}`;
+            const hasAvatar = Boolean(msg.payload.avatar);
+            chip.className = 'answer-ticker-chip' + (hasAvatar ? '' : ' no-avatar');
+            if (hasAvatar) {
+                const img = document.createElement('img');
+                img.className = 'answer-ticker-avatar';
+                img.src = msg.payload.avatar;
+                img.alt = '';
+                chip.appendChild(img);
+            }
+            const label = document.createElement('span');
+            label.textContent = msg.payload.name;
+            chip.appendChild(label);
+            if (msg.payload.streak >= 3) {
+                const streakEl = document.createElement('span');
+                streakEl.className = 'answer-ticker-streak';
+                streakEl.textContent = `🔥x${msg.payload.streak}`;
+                chip.appendChild(streakEl);
+            }
             answerTicker.appendChild(chip);
         }
     } else if (msg.type === 'return_home') {
@@ -131,6 +150,10 @@ function handleMessage(msg) {
             sfxStartHeartbeat();
         } else {
             sfxStopHeartbeat();
+        }
+        if (!halfHpAnnounced && s.hp > 0 && pct <= 50) {
+            halfHpAnnounced = true;
+            fxHalfHpBanner();
         }
         roundBadge.textContent = `round ${s.round}/${s.total_rounds}`;
         onlineBadge.textContent = `${s.guests_online} online`;
@@ -159,6 +182,7 @@ function handleMessage(msg) {
         penanceWheelWrap.style.display = 'block';
         buildPenanceWheel(penanceWheelWrap, msg.payload.count);
         spinPenanceWheelTo(penanceWheelWrap, msg.payload.count, msg.payload.index);
+        sfxWheelSpin(WHEEL_SPIN_SECONDS_JS);
     } else if (msg.type === 'penance_result') {
         penanceWheelWrap.style.display = 'none';
         penanceRevealBox.style.display = 'block';
@@ -170,10 +194,12 @@ function handleMessage(msg) {
         penanceRevealHeal.textContent = `✅ Confermata: +${msg.payload.heal} HP alla festeggiata!`;
         pulseHeal(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'heal');
+        fxFloatNumber(msg.payload.heal, 'heal');
     } else if (msg.type === 'penance_declined') {
         penanceConfirmRow.style.display = 'none';
         penanceRevealHeal.textContent = '❌ Non confermata: nessun HP guadagnato.';
     } else if (msg.type === 'winner') {
+        stopTickCountdown();
         if (msg.payload.name) {
             fxFire();
             fxConfetti(40);
@@ -189,6 +215,7 @@ function handleMessage(msg) {
         buildWheel(wheelWrap);
     } else if (msg.type === 'wheel_result') {
         spinWheelTo(wheelWrap, msg.payload.category);
+        sfxWheelSpin(WHEEL_SPIN_SECONDS_JS);
     } else if (msg.type === 'duel_ready_confirm') {
         duelSendCategory.textContent = categoryLabel(msg.payload.category);
         duelSendPopup.style.display = 'flex';
@@ -197,13 +224,16 @@ function handleMessage(msg) {
         fxCountdown(msg.payload.seconds, 'La sfida sta per aprirsi!');
     } else if (msg.type === 'round_countdown') {
         fxCountdown(msg.payload.seconds, 'La domanda sta per aprirsi!');
+        setTimeout(() => startTickCountdown(ROUND_REVEAL_SECONDS_JS), msg.payload.seconds * 1000);
     } else if (msg.type === 'duel_challenge') {
         wheelCard.style.display = 'none';
         duelResultCard.style.display = 'none';
         duelChallengeCard.style.display = 'block';
         duelCategoryTitle.textContent = `Indovina la ${categoryLabel(msg.payload.category).toLowerCase()}`;
+        fxRenderVsBanner(duelVsBanner, msg.payload.challenger_avatar, bossPortraitImg.src);
         fxThemeParticles(msg.payload.category);
         startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
+        startTickCountdown(DUEL_TIMEOUT_SECONDS_JS);
         if (currentMusicAudio) {
             currentMusicAudio.pause();
             currentMusicAudio = null;
@@ -271,6 +301,7 @@ function handleMessage(msg) {
             : 'Lo sfidante ha risposto!';
     } else if (msg.type === 'duel_result') {
         stopCountdownBar(duelTimerBar);
+        stopTickCountdown();
         if (posterReveal) posterReveal.finish();
         duelResultCard.style.display = 'block';
         Array.from(duelOptionsBox.children).forEach((b, idx) => {
@@ -287,6 +318,7 @@ function handleMessage(msg) {
             fxFire();
             fxConfetti(50);
             fxPhotoFlash('win', `${msg.payload.winner_name} vince lo scontro!`);
+            fxFloatNumber(msg.payload.damage, 'damage');
         } else if (msg.payload.outcome === 'boss') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
             duelResultBanner.textContent = 'La Laureata ha risposto prima! Nessun danno.';
@@ -305,9 +337,11 @@ function handleMessage(msg) {
         pulseShake(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'damage');
         sfxPlay('explosion');
+        fxFloatNumber(msg.payload.amount, 'damage');
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
         duelSendPopup.style.display = 'none';
+        stopTickCountdown();
         if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
     } else if (msg.type === 'reveal_leaderboard') {
@@ -317,7 +351,9 @@ function handleMessage(msg) {
         penanceScreen.style.display = 'none';
         duelSendPopup.style.display = 'none';
         stopCountdownBar(duelTimerBar);
+        stopTickCountdown();
         gameOverShown = false;
+        halfHpAnnounced = false;
         sfxStopHeartbeat();
         document.body.classList.remove('enrage-mode');
         if (answerTicker) answerTicker.innerHTML = '';

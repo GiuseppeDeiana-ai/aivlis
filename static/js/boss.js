@@ -37,6 +37,7 @@ const duelResultBanner = document.getElementById('duelResultBanner');
 const duelTimerBar = document.getElementById('duelTimerBar');
 const wheelStatusText = document.getElementById('wheelStatusText');
 const roundTimerBar = document.getElementById('roundTimerBar');
+const duelVsBanner = document.getElementById('duelVsBanner');
 
 const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
 const ROUND_REVEAL_SECONDS_JS = 20; // deve corrispondere a ROUND_REVEAL_SECONDS in main.py
@@ -59,6 +60,7 @@ let hasAnsweredDuel = false;
 let penanceSpinning = false;
 let lastPenanceCount = 0;
 let gameOverShown = false;
+let halfHpAnnounced = false;
 
 function connect(key) {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -153,6 +155,7 @@ function handleMessage(msg) {
         duelChallengeCard.style.display = 'block';
         hasAnsweredDuel = false;
         duelCategoryTitle.textContent = `Indovina la ${categoryLabel(msg.payload.category).toLowerCase()}`;
+        fxRenderVsBanner(duelVsBanner, msg.payload.challenger_avatar, bossPortraitImg.src);
         fxThemeParticles(msg.payload.category);
         startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
         if (posterReveal) {
@@ -225,6 +228,7 @@ function handleMessage(msg) {
             fxScreenShake();
             fxVoid();
             fxPhotoFlash('lose', 'Hai perso lo scontro!');
+            fxFloatNumber(msg.payload.damage, 'damage');
             fxVibrate(200);
         } else if (msg.payload.outcome === 'timeout') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
@@ -265,6 +269,7 @@ function handleMessage(msg) {
         penanceRevealHeal.textContent = `✅ Confermata! +${msg.payload.heal} HP!`;
         pulseHeal(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'heal');
+        fxFloatNumber(msg.payload.heal, 'heal');
     } else if (msg.type === 'penance_declined') {
         penanceRevealHeal.textContent = '❌ La regia non ha confermato: nessun HP guadagnato.';
     } else if (msg.type === 'penance_denied') {
@@ -277,6 +282,10 @@ function handleMessage(msg) {
         hpLabel.textContent = `HP ${msg.payload.hp}/${msg.payload.max_hp}`;
         lobbyCard.style.display = msg.payload.phase === 'lobby' ? 'block' : 'none';
         document.body.classList.toggle('enrage-mode', msg.payload.hp > 0 && pct < 25);
+        if (!halfHpAnnounced && msg.payload.hp > 0 && pct <= 50) {
+            halfHpAnnounced = true;
+            fxHalfHpBanner();
+        }
         lastPenanceCount = msg.payload.penance_count;
         const canSpinPenance = !penanceSpinning
             && !msg.payload.penance_pending
@@ -299,6 +308,7 @@ function handleMessage(msg) {
         statusLine.textContent = `Hai subito ${msg.payload.amount} danni!`;
         pulseShake(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'damage');
+        fxFloatNumber(msg.payload.amount, 'damage');
     } else if (msg.type === 'reveal_leaderboard') {
         fxRevealLeaderboard(msg.payload.leaderboard, msg.payload.awards);
     } else if (msg.type === 'reset') {
@@ -311,6 +321,7 @@ function handleMessage(msg) {
         stopCountdownBar(roundTimerBar);
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         gameOverShown = false;
+        halfHpAnnounced = false;
         document.body.classList.remove('enrage-mode');
         const finaleEl = document.getElementById('fxFinaleOverlay');
         if (finaleEl) finaleEl.remove();

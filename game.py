@@ -12,6 +12,7 @@ DUEL_WIN_BONUS_SCORE = 1
 BOSS_ID = "boss"
 PENANCE_HEAL = 10
 DEFAULT_PENANCE_LIMIT = 3
+MAX_AVATAR_LENGTH = 400_000  # ~300KB decoded: sufficiente per una foto 200x200 compressa
 
 
 class Phase(str, Enum):
@@ -35,6 +36,9 @@ class Guest:
     duels_won: int = 0
     duels_lost: int = 0
     fastest_correct_seconds: Optional[float] = None
+    avatar: Optional[str] = None
+    last_answered_round: int = -1
+    answer_streak: int = 0
 
 
 class GameState:
@@ -113,14 +117,30 @@ class GameState:
         at = time.time()
         self.guest_answers[guest_id] = {"choice": choice, "at": at}
         is_correct = choice == self.boss_answer
-        if is_correct and guest_id in self.guests:
+        if guest_id in self.guests:
             guest = self.guests[guest_id]
-            guest.correct_answers += 1
-            if self.round_open_at is not None:
-                elapsed = at - self.round_open_at
-                if guest.fastest_correct_seconds is None or elapsed < guest.fastest_correct_seconds:
-                    guest.fastest_correct_seconds = elapsed
+            if guest.last_answered_round == self.round_index - 1:
+                guest.answer_streak += 1
+            else:
+                guest.answer_streak = 1
+            guest.last_answered_round = self.round_index
+            if is_correct:
+                guest.correct_answers += 1
+                if self.round_open_at is not None:
+                    elapsed = at - self.round_open_at
+                    if guest.fastest_correct_seconds is None or elapsed < guest.fastest_correct_seconds:
+                        guest.fastest_correct_seconds = elapsed
         return is_correct
+
+    def set_avatar(self, guest_id: str, avatar_data_url: str) -> bool:
+        if guest_id not in self.guests:
+            return False
+        if not avatar_data_url or not avatar_data_url.startswith("data:image/"):
+            return False
+        if len(avatar_data_url) > MAX_AVATAR_LENGTH:
+            return False
+        self.guests[guest_id].avatar = avatar_data_url
+        return True
 
     def finalize_round_winner(self) -> Optional[str]:
         """Dopo la finestra di risposta (20s), determina chi ha risposto correttamente
@@ -316,6 +336,7 @@ class GameState:
             "options": c["options"],
             "challenger_id": self.challenger_id,
             "challenger_name": self.guests[self.challenger_id].name if self.challenger_id in self.guests else "?",
+            "challenger_avatar": self.guests[self.challenger_id].avatar if self.challenger_id in self.guests else None,
         }
 
     # ---- ruota delle penitenze (il boss guadagna HP) ----
@@ -451,7 +472,7 @@ class GameState:
             "answers_count": len(self.guest_answers),
             "guests_online": sum(1 for g in self.guests.values() if g.connected),
             "leaderboard": sorted(
-                ({"name": g.name, "score": g.score} for g in self.guests.values()),
+                ({"id": g.id, "name": g.name, "score": g.score, "avatar": g.avatar} for g in self.guests.values()),
                 key=lambda x: -x["score"],
             )[:10],
             "challenger_name": challenger_name,

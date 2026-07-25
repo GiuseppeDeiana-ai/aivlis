@@ -43,7 +43,26 @@
     <h3>Come ti chiami?</h3>
     <input type="text" id="nameInput" placeholder="Il tuo nome" maxlength="24">
     <br>
-    <button class="primary" id="joinBtn">Entra in gioco</button>
+    <button class="primary" id="joinBtn">Avanti</button>
+</div>
+
+<div id="avatarScreen" class="card center" style="display:none;">
+    <h3>📸 Scattati una foto!</h3>
+    <p class="status">Sarà il tuo avatar per tutta la partita</p>
+    <div class="avatar-camera-box mirrored" id="avatarCameraBox">
+        <video id="avatarVideo" autoplay playsinline muted></video>
+        <img id="avatarPreviewImg" alt="" style="display:none;">
+    </div>
+    <canvas id="avatarCanvas" style="display:none;"></canvas>
+    <div class="row" id="avatarCaptureRow">
+        <button class="primary" id="avatarCaptureBtn">📸 Scatta</button>
+    </div>
+    <div class="row" id="avatarConfirmRow" style="display:none;">
+        <button class="primary" id="avatarRetakeBtn">🔄 Rifai</button>
+        <button class="primary" id="avatarConfirmBtn">✅ Conferma</button>
+    </div>
+    <div class="status" id="avatarStatusLine"></div>
+    <button class="primary danger" id="avatarSkipBtn">Salta, entra senza foto</button>
 </div>
 
 <div id="gameScreen" style="display:none; width:100%; max-width:480px;">
@@ -76,6 +95,7 @@
             <div class="status" id="wheelStatusText">La festeggiata sta girando la ruota...</div>
         </div>
         <div class="card" id="duelChallengeCard" style="display:none;">
+            <div class="duel-vs-banner" id="duelVsBanner"></div>
             <h3 id="duelCategoryTitle"></h3>
             <div id="duelMedia"></div>
             <div class="options" id="duelOptionsBox"></div>

@@ -3,6 +3,19 @@ const joinScreen = document.getElementById('joinScreen');
 const gameScreen = document.getElementById('gameScreen');
 const nameInput = document.getElementById('nameInput');
 const joinBtn = document.getElementById('joinBtn');
+const avatarScreen = document.getElementById('avatarScreen');
+const avatarCameraBox = document.getElementById('avatarCameraBox');
+const avatarVideo = document.getElementById('avatarVideo');
+const avatarPreviewImg = document.getElementById('avatarPreviewImg');
+const avatarCanvas = document.getElementById('avatarCanvas');
+const avatarCaptureRow = document.getElementById('avatarCaptureRow');
+const avatarConfirmRow = document.getElementById('avatarConfirmRow');
+const avatarCaptureBtn = document.getElementById('avatarCaptureBtn');
+const avatarRetakeBtn = document.getElementById('avatarRetakeBtn');
+const avatarConfirmBtn = document.getElementById('avatarConfirmBtn');
+const avatarSkipBtn = document.getElementById('avatarSkipBtn');
+const avatarStatusLine = document.getElementById('avatarStatusLine');
+const duelVsBanner = document.getElementById('duelVsBanner');
 const statusLine = document.getElementById('statusLine');
 const lobbyCard = document.getElementById('lobbyCard');
 const questionCard = document.getElementById('questionCard');
@@ -57,7 +70,82 @@ let posterReveal = null;
 let hasAnsweredThisRound = false;
 let hasAnsweredDuel = false;
 let gameOverShown = false;
+let halfHpAnnounced = false;
 let lobbyPollTimer = null;
+let avatarStream = null;
+let capturedAvatar = null;
+let pendingName = '';
+
+async function startAvatarCapture(name) {
+    pendingName = name;
+    joinScreen.style.display = 'none';
+    avatarScreen.style.display = 'block';
+    avatarPreviewImg.style.display = 'none';
+    avatarVideo.style.display = 'block';
+    avatarCaptureRow.style.display = 'flex';
+    avatarConfirmRow.style.display = 'none';
+    avatarStatusLine.textContent = '';
+    capturedAvatar = null;
+
+    try {
+        avatarStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        avatarVideo.srcObject = avatarStream;
+    } catch (e) {
+        avatarStatusLine.textContent = 'Fotocamera non disponibile: puoi entrare senza foto.';
+        avatarCaptureRow.style.display = 'none';
+    }
+}
+
+function stopAvatarStream() {
+    if (avatarStream) {
+        avatarStream.getTracks().forEach((t) => t.stop());
+        avatarStream = null;
+    }
+}
+
+avatarCaptureBtn.onclick = () => {
+    const size = 240;
+    avatarCanvas.width = size;
+    avatarCanvas.height = size;
+    const ctx = avatarCanvas.getContext('2d');
+    const vw = avatarVideo.videoWidth || size;
+    const vh = avatarVideo.videoHeight || size;
+    const side = Math.min(vw, vh);
+    const sx = (vw - side) / 2;
+    const sy = (vh - side) / 2;
+    ctx.save();
+    ctx.translate(size, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(avatarVideo, sx, sy, side, side, 0, 0, size, size);
+    ctx.restore();
+    capturedAvatar = avatarCanvas.toDataURL('image/jpeg', 0.7);
+    avatarPreviewImg.src = capturedAvatar;
+    avatarPreviewImg.style.display = 'block';
+    avatarVideo.style.display = 'none';
+    avatarCaptureRow.style.display = 'none';
+    avatarConfirmRow.style.display = 'flex';
+};
+
+avatarRetakeBtn.onclick = () => {
+    capturedAvatar = null;
+    avatarPreviewImg.style.display = 'none';
+    avatarVideo.style.display = 'block';
+    avatarCaptureRow.style.display = 'flex';
+    avatarConfirmRow.style.display = 'none';
+};
+
+avatarConfirmBtn.onclick = () => {
+    stopAvatarStream();
+    if (capturedAvatar) localStorage.setItem('guest_avatar', capturedAvatar);
+    avatarScreen.style.display = 'none';
+    connect(pendingName, capturedAvatar);
+};
+
+avatarSkipBtn.onclick = () => {
+    stopAvatarStream();
+    avatarScreen.style.display = 'none';
+    connect(pendingName, null);
+};
 
 async function checkLobbyStatus() {
     try {
@@ -91,14 +179,18 @@ function getGuestId() {
     return id;
 }
 
-function connect(name) {
+function connect(name, avatarDataUrl) {
     const id = getGuestId();
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     ws = new WebSocket(`${proto}://${location.host}/ws/guest?name=${encodeURIComponent(name)}&id=${id}`);
 
     ws.onopen = () => {
         joinScreen.style.display = 'none';
+        avatarScreen.style.display = 'none';
         gameScreen.style.display = 'block';
+        if (avatarDataUrl) {
+            ws.send(JSON.stringify({ type: 'set_avatar', avatar: avatarDataUrl }));
+        }
         pingInterval = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' }));
         }, PING_INTERVAL_MS);
@@ -210,6 +302,7 @@ function handleMessage(msg) {
             fxFire();
             fxConfetti(50);
             fxPhotoFlash('win', `${msg.payload.winner_name} vince lo scontro!`);
+            fxFloatNumber(msg.payload.damage, 'damage');
             fxVibrate([100, 50, 100]);
         } else if (msg.payload.outcome === 'boss') {
             fxVoid();
@@ -222,6 +315,7 @@ function handleMessage(msg) {
     } else if (msg.type === 'boss_hit') {
         pulseShake(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'damage');
+        fxFloatNumber(msg.payload.amount, 'damage');
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
@@ -245,6 +339,7 @@ function handleMessage(msg) {
         penanceRevealHeal.textContent = `✅ Confermata! +${msg.payload.heal} HP alla festeggiata!`;
         pulseHeal(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'heal');
+        fxFloatNumber(msg.payload.heal, 'heal');
     } else if (msg.type === 'penance_declined') {
         penanceRevealHeal.textContent = '❌ Non confermata dalla regia: nessun HP guadagnato.';
     } else if (msg.type === 'state') {
@@ -260,6 +355,7 @@ function handleMessage(msg) {
         stopCountdownBar(roundTimerBar);
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         gameOverShown = false;
+        halfHpAnnounced = false;
         document.body.classList.remove('enrage-mode');
         const finaleEl = document.getElementById('fxFinaleOverlay');
         if (finaleEl) finaleEl.remove();
@@ -310,6 +406,7 @@ function showDuelChallenge(payload) {
     hasAnsweredDuel = false;
 
     duelCategoryTitle.textContent = `Indovina la ${categoryLabel(payload.category).toLowerCase()}`;
+    fxRenderVsBanner(duelVsBanner, payload.challenger_avatar, bossPortraitImg.src);
     fxThemeParticles(payload.category);
     startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
     if (posterReveal) {
@@ -400,6 +497,10 @@ function updateState(state) {
     hpLabel.textContent = `HP ${state.hp}/${state.max_hp}`;
     lobbyCard.style.display = state.phase === 'lobby' ? 'block' : 'none';
     document.body.classList.toggle('enrage-mode', state.hp > 0 && pct < 25);
+    if (!halfHpAnnounced && state.hp > 0 && pct <= 50) {
+        halfHpAnnounced = true;
+        fxHalfHpBanner();
+    }
     if (state.phase === 'game_over') {
         statusLine.textContent = 'La laureata e stata sconfitta! Complimenti a tutti!';
         if (!gameOverShown) {
@@ -407,13 +508,19 @@ function updateState(state) {
             fxGrandFinale({});
         }
     }
-    renderLeaderboard(leaderboard, state.leaderboard);
+    renderLeaderboard(leaderboard, state.leaderboard, getGuestId());
 }
 
 joinBtn.onclick = () => {
     const name = nameInput.value.trim() || localStorage.getItem('guest_name') || '';
     if (!name) { nameInput.focus(); return; }
-    connect(name);
+    const savedAvatar = localStorage.getItem('guest_avatar');
+    if (savedAvatar) {
+        joinScreen.style.display = 'none';
+        connect(name, savedAvatar);
+    } else {
+        startAvatarCapture(name);
+    }
 };
 
 const savedName = localStorage.getItem('guest_name');

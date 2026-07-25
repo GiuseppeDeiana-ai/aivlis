@@ -299,7 +299,7 @@ input[type="text"] {
 
 .lb-row {
     display: grid;
-    grid-template-columns: 32px 1fr 90px 40px;
+    grid-template-columns: 28px 32px 1fr 90px 40px;
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
@@ -331,6 +331,31 @@ input[type="text"] {
     font-size: 1.2rem;
     text-align: center;
     font-weight: 800;
+}
+
+.lb-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.lb-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.lb-row-you {
+    border-color: rgba(249, 212, 35, 0.85) !important;
+    box-shadow: 0 0 0 2px rgba(249, 212, 35, 0.5), 0 0 20px rgba(249, 212, 35, 0.35);
 }
 
 .lb-name {
@@ -1168,10 +1193,143 @@ body.enrage-mode .boss-name-tag {
 }
 
 .answer-ticker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     background: rgba(255, 255, 255, 0.12);
     border-radius: 999px;
-    padding: 6px 14px;
+    padding: 6px 14px 6px 6px;
     font-size: 0.85rem;
     font-weight: 700;
     animation: leaderboardRowPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.answer-ticker-chip.no-avatar { padding: 6px 14px; }
+
+.answer-ticker-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.answer-ticker-streak {
+    color: #ff9d3d;
+    font-weight: 800;
+}
+
+/* ---- Numeri fluttuanti (danno/cura) ---- */
+
+.fx-float-number {
+    position: fixed;
+    font-size: 1.8rem;
+    font-weight: 900;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    animation: fxFloatRise 1.4s ease-out forwards;
+    z-index: 10003;
+}
+
+.fx-float-damage { color: #ff4e50; }
+.fx-float-heal { color: #3cdc82; }
+
+@keyframes fxFloatRise {
+    0% { opacity: 0; transform: translate(-50%, 0) scale(0.8); }
+    15% { opacity: 1; transform: translate(-50%, -10px) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -70px) scale(1); }
+}
+
+/* ---- Annuncio a meta' vita ---- */
+
+.fx-halfhp-banner {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10002;
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-align: center;
+    color: #ff4e50;
+    text-shadow: 0 0 20px rgba(255, 78, 80, 0.9), 0 4px 10px rgba(0, 0, 0, 0.7);
+    background: rgba(10, 5, 25, 0.75);
+    border: 2px solid #ff4e50;
+    border-radius: 16px;
+    padding: 16px 24px;
+    animation: halfHpPulse 0.5s ease-in-out infinite, fxEpicIn 0.4s ease forwards;
+    max-width: 85vw;
+}
+
+@keyframes halfHpPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.05); }
+}
+
+/* ---- Banner "VS" nei duelli: foto sfidante contro foto della festeggiata ---- */
+
+.duel-vs-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.duel-vs-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+
+.duel-vs-avatar.challenger { border-color: #00c9a7; }
+.duel-vs-avatar.boss { border-color: #ff4e50; }
+
+.duel-vs-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.duel-vs-text {
+    font-family: 'GameOfThrones', 'Segoe UI', system-ui, sans-serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #f9d423;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+/* ---- Schermata di scatto avatar in fase di registrazione ---- */
+
+.avatar-camera-box {
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+    margin: 0 auto 14px;
+    border: 3px solid rgba(249, 212, 35, 0.5);
+    position: relative;
+}
+
+.avatar-camera-box video,
+.avatar-camera-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatar-camera-box.mirrored video {
+    transform: scaleX(-1);
 }

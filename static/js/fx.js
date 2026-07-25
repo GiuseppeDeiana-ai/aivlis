@@ -227,6 +227,71 @@ function fxVibrate(pattern) {
     }
 }
 
+// ---- Numeri fluttuanti (danno/cura) sopra il ritratto del boss ----
+
+function fxFloatNumber(amount, kind = "damage") {
+    const portrait = document.getElementById("bossPortrait");
+    if (!portrait) return;
+    const rect = portrait.getBoundingClientRect();
+    const el = document.createElement("div");
+    el.className = "fx-float-number " + (kind === "heal" ? "fx-float-heal" : "fx-float-damage");
+    el.textContent = (kind === "heal" ? "+" : "-") + amount;
+    el.style.left = `${rect.left + rect.width * (0.35 + Math.random() * 0.3)}px`;
+    el.style.top = `${rect.top + rect.height * 0.4}px`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+}
+
+// ---- Banner "VS" nei duelli: foto sfidante contro foto della festeggiata ----
+
+function fxRenderVsBanner(container, challengerAvatar, bossPhotoSrc) {
+    if (!container) return;
+    container.innerHTML = '';
+    const challengerEl = document.createElement('div');
+    challengerEl.className = 'duel-vs-avatar challenger';
+    if (challengerAvatar) {
+        const img = document.createElement('img');
+        img.src = challengerAvatar;
+        img.alt = '';
+        challengerEl.appendChild(img);
+    } else {
+        challengerEl.textContent = '🙂';
+    }
+
+    const vsText = document.createElement('div');
+    vsText.className = 'duel-vs-text';
+    vsText.textContent = 'VS';
+
+    const bossEl = document.createElement('div');
+    bossEl.className = 'duel-vs-avatar boss';
+    if (bossPhotoSrc) {
+        const bossImg = document.createElement('img');
+        bossImg.src = bossPhotoSrc;
+        bossImg.alt = '';
+        bossEl.appendChild(bossImg);
+    } else {
+        bossEl.textContent = '🐉';
+    }
+
+    container.appendChild(challengerEl);
+    container.appendChild(vsText);
+    container.appendChild(bossEl);
+}
+
+// ---- Annuncio a meta' vita ----
+
+function fxHalfHpBanner() {
+    const existing = document.getElementById("fxHalfHpBanner");
+    if (existing) existing.remove();
+    const div = document.createElement("div");
+    div.id = "fxHalfHpBanner";
+    div.className = "fx-halfhp-banner";
+    div.textContent = "⚠️ LA LAUREATA VACILLA! ⚠️";
+    document.body.appendChild(div);
+    fxScreenShake();
+    setTimeout(() => div.remove(), 2600);
+}
+
 // ---- Gran finale: la Laureata sconfitta + rivelazione classifica con suspance ----
 
 const FX_DEFEAT_PHOTO = "/resources/silvia_drago1.png";

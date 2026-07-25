@@ -106,3 +106,35 @@ function sfxStopHeartbeat() {
         sfxHeartbeatInterval = null;
     }
 }
+
+function sfxTick() {
+    if (!sfxCtx) return;
+    sfxThump(sfxCtx.currentTime, 1500, 0.045, 0.35);
+}
+
+let sfxTickTimers = [];
+
+function startTickCountdown(totalSeconds, tickWindow = 5) {
+    stopTickCountdown();
+    if (!sfxCtx) return;
+    const leadMs = Math.max(0, (totalSeconds - tickWindow) * 1000);
+    for (let i = 0; i < tickWindow; i++) {
+        sfxTickTimers.push(setTimeout(sfxTick, leadMs + i * 1000));
+    }
+}
+
+function stopTickCountdown() {
+    sfxTickTimers.forEach((id) => clearTimeout(id));
+    sfxTickTimers = [];
+}
+
+function sfxWheelSpin(durationSeconds) {
+    if (!sfxCtx) return;
+    const now = sfxCtx.currentTime;
+    const totalClacks = 16;
+    for (let i = 0; i < totalClacks; i++) {
+        const progress = i / totalClacks;
+        const t = now + progress * progress * durationSeconds;
+        sfxThump(t, 750, 0.035, 0.3);
+    }
+}

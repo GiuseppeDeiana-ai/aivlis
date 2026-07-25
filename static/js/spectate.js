@@ -41,6 +41,7 @@ const duelResultBanner = document.getElementById('duelResultBanner');
 const duelTimerBar = document.getElementById('duelTimerBar');
 const wheelStatusText = document.getElementById('wheelStatusText');
 const roundTimerBar = document.getElementById('roundTimerBar');
+const duelVsBanner = document.getElementById('duelVsBanner');
 
 const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
 const ROUND_REVEAL_SECONDS_JS = 20; // deve corrispondere a ROUND_REVEAL_SECONDS in main.py
@@ -57,6 +58,7 @@ let ws = null;
 let pingInterval = null;
 let posterReveal = null;
 let gameOverShown = false;
+let halfHpAnnounced = false;
 
 function connect() {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -119,8 +121,24 @@ function handleMessage(msg) {
     } else if (msg.type === 'answer_progress') {
         if (answerTicker) {
             const chip = document.createElement('span');
-            chip.className = 'answer-ticker-chip';
-            chip.textContent = `✍️ ${msg.payload.name}`;
+            const hasAvatar = Boolean(msg.payload.avatar);
+            chip.className = 'answer-ticker-chip' + (hasAvatar ? '' : ' no-avatar');
+            if (hasAvatar) {
+                const img = document.createElement('img');
+                img.className = 'answer-ticker-avatar';
+                img.src = msg.payload.avatar;
+                img.alt = '';
+                chip.appendChild(img);
+            }
+            const label = document.createElement('span');
+            label.textContent = msg.payload.name + (msg.payload.streak >= 3 ? ' ' : '');
+            chip.appendChild(label);
+            if (msg.payload.streak >= 3) {
+                const streakEl = document.createElement('span');
+                streakEl.className = 'answer-ticker-streak';
+                streakEl.textContent = `🔥x${msg.payload.streak}`;
+                chip.appendChild(streakEl);
+            }
             answerTicker.appendChild(chip);
         }
     } else if (msg.type === 'winner') {
@@ -161,6 +179,7 @@ function handleMessage(msg) {
             fxFire();
             fxConfetti(50);
             fxPhotoFlash('win', `${msg.payload.winner_name} vince lo scontro!`);
+            fxFloatNumber(msg.payload.damage, 'damage');
         } else if (msg.payload.outcome === 'boss') {
             fxVoid();
             fxPhotoFlash('lose', 'La Laureata resiste allo scontro!');
@@ -170,6 +189,7 @@ function handleMessage(msg) {
     } else if (msg.type === 'boss_hit') {
         pulseShake(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'damage');
+        fxFloatNumber(msg.payload.amount, 'damage');
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
@@ -193,6 +213,7 @@ function handleMessage(msg) {
         penanceRevealHeal.textContent = `✅ Confermata! +${msg.payload.heal} HP alla festeggiata!`;
         pulseHeal(bossPortrait);
         pulseHpFlash(hpBar, hpBarWrap, 'heal');
+        fxFloatNumber(msg.payload.heal, 'heal');
     } else if (msg.type === 'penance_declined') {
         penanceRevealHeal.textContent = '❌ Non confermata dalla regia: nessun HP guadagnato.';
     } else if (msg.type === 'state') {
@@ -209,6 +230,7 @@ function handleMessage(msg) {
         if (answerTicker) answerTicker.innerHTML = '';
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         gameOverShown = false;
+        halfHpAnnounced = false;
         document.body.classList.remove('enrage-mode');
         const finaleEl = document.getElementById('fxFinaleOverlay');
         if (finaleEl) finaleEl.remove();
@@ -244,6 +266,7 @@ function showDuelChallenge(payload) {
     duelChallengeCard.style.display = 'block';
 
     duelCategoryTitle.textContent = `Indovina la ${categoryLabel(payload.category).toLowerCase()}`;
+    fxRenderVsBanner(duelVsBanner, payload.challenger_avatar, bossPortraitImg.src);
     fxThemeParticles(payload.category);
     startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
     if (posterReveal) {
@@ -320,6 +343,10 @@ function updateState(state) {
     roundLine.textContent = state.total_rounds > 0 ? `Domanda ${state.round}/${state.total_rounds}` : '';
     lobbyCard.style.display = state.phase === 'lobby' ? 'block' : 'none';
     document.body.classList.toggle('enrage-mode', state.hp > 0 && pct < 25);
+    if (!halfHpAnnounced && state.hp > 0 && pct <= 50) {
+        halfHpAnnounced = true;
+        fxHalfHpBanner();
+    }
     if (state.phase === 'game_over') {
         statusLine.textContent = 'La laureata e stata sconfitta! Complimenti a tutti!';
         if (!gameOverShown) {

@@ -333,13 +333,25 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                     await hub._send(websocket, {"type": "answer_ack", "payload": {"status": "not_open_or_duplicate"}})
                 else:
                     await hub._send(websocket, {"type": "answer_ack", "payload": {"status": "correct" if result else "wrong"}})
-                    await hub.to_regia({"type": "answer_progress", "payload": {"name": guest_name}})
-                    await hub.to_spectators({"type": "answer_progress", "payload": {"name": guest_name}})
+                    ticker_payload = {
+                        "name": guest_name,
+                        "avatar": game.guests[guest_id].avatar if guest_id in game.guests else None,
+                        "streak": game.guests[guest_id].answer_streak if guest_id in game.guests else 1,
+                    }
+                    await hub.to_regia({"type": "answer_progress", "payload": ticker_payload})
+                    await hub.to_spectators({"type": "answer_progress", "payload": ticker_payload})
                     if result:
                         await log(f"✅ {guest_name} ha risposto correttamente, in attesa della rivelazione...")
                     else:
                         await log(f"❌ {guest_name} ha risposto, ma diverso dalla festeggiata.")
                     await broadcast_state()
+            elif t == "set_avatar":
+                avatar = data.get("avatar", "")
+                if game.set_avatar(guest_id, avatar):
+                    await log(f"📸 {guest_name} ha impostato la sua foto come avatar.")
+                    await broadcast_state()
+                else:
+                    await log(f"⚠️ Avatar di {guest_name} rifiutato (formato o dimensione non valida).")
             elif t == "duel_answer":
                 choice = int(data["choice"])
                 result = game.submit_duel_answer(guest_id, choice)
