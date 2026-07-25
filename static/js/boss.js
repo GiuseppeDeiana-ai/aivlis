@@ -139,13 +139,13 @@ function handleMessage(msg) {
         duelMedia.innerHTML = '';
         if (msg.payload.category === 'musica') {
             duelMedia.innerHTML = '<div class="status">🎵 Ascolta dalle casse della regia...</div>';
-        } else if (msg.payload.category === 'film' && msg.payload.media) {
+        } else if ((msg.payload.category === 'film' || msg.payload.category === 'videogioco') && msg.payload.media) {
             const canvas = document.createElement('canvas');
-            canvas.width = 300;
-            canvas.height = 450;
+            canvas.width = msg.payload.category === 'film' ? 300 : 400;
+            canvas.height = msg.payload.category === 'film' ? 450 : 300;
             canvas.className = 'poster-reveal';
             duelMedia.appendChild(canvas);
-            const imgUrl = `/static/media/film/${encodeURIComponent(msg.payload.media)}`;
+            const imgUrl = `/static/media/${msg.payload.category}/${encodeURIComponent(msg.payload.media)}`;
             posterReveal = startPosterReveal(canvas, imgUrl);
         } else if (msg.payload.media) {
             const img = document.createElement('img');

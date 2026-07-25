@@ -47,6 +47,11 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 app.mount("/resources", StaticFiles(directory=str(BASE_DIR / "resources")), name="resources")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# Cambia ad ogni riavvio del processo (quindi ad ogni deploy): forza i browser a scaricare
+# JS/CSS aggiornati invece di servire versioni vecchie dalla cache.
+ASSET_VERSION = str(int(time.time()))
+templates.env.globals["asset_version"] = ASSET_VERSION
+
 game = GameState(BASE_DIR / "questions.json", BASE_DIR / "duels.json", BASE_DIR / "penitenze.json")
 duel_timeout_task: asyncio.Task | None = None
 duel_countdown_task: asyncio.Task | None = None

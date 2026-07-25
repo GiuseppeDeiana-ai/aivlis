@@ -259,13 +259,13 @@ function showDuelChallenge(payload) {
     duelMedia.innerHTML = '';
     if (payload.category === 'musica') {
         duelMedia.innerHTML = '<div class="status">🎵 Ascolta dalle casse della regia...</div>';
-    } else if (payload.category === 'film' && payload.media) {
+    } else if ((payload.category === 'film' || payload.category === 'videogioco') && payload.media) {
         const canvas = document.createElement('canvas');
-        canvas.width = 300;
-        canvas.height = 450;
+        canvas.width = payload.category === 'film' ? 300 : 400;
+        canvas.height = payload.category === 'film' ? 450 : 300;
         canvas.className = 'poster-reveal';
         duelMedia.appendChild(canvas);
-        const imgUrl = `/static/media/film/${encodeURIComponent(payload.media)}`;
+        const imgUrl = `/static/media/${payload.category}/${encodeURIComponent(payload.media)}`;
         posterReveal = startPosterReveal(canvas, imgUrl);
     } else if (payload.media) {
         const img = document.createElement('img');

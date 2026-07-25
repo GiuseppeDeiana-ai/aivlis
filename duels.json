@@ -150,9 +150,75 @@
   "videogioco": [
     {
       "id": "videogioco_1",
-      "media": "placeholder_1.jpg",
-      "options": ["Titolo A", "Titolo B", "Titolo C", "Titolo D"],
+      "media": "arc raiders.jpg",
+      "options": ["Escape from Tarkov", "Hunt: Showdown", "Arc Raiders", "The Cycle: Frontier"],
+      "answer": 2
+    },
+    {
+      "id": "videogioco_2",
+      "media": "call of duty.jpg",
+      "options": ["Call of Duty", "Battlefield", "Halo", "Titanfall"],
       "answer": 0
+    },
+    {
+      "id": "videogioco_3",
+      "media": "fifa.jpg",
+      "options": ["eFootball", "Football Manager", "PES (Pro Evolution Soccer)", "FIFA"],
+      "answer": 3
+    },
+    {
+      "id": "videogioco_4",
+      "media": "just dance.jpg",
+      "options": ["Zumba Fitness", "Just Dance", "Kinect Sports", "Dance Dance Revolution"],
+      "answer": 1
+    },
+    {
+      "id": "videogioco_5",
+      "media": "mario kart.jpg",
+      "options": ["Diddy Kong Racing", "Mario Kart", "Crash Team Racing", "Sonic & All-Stars Racing Transformed"],
+      "answer": 1
+    },
+    {
+      "id": "videogioco_6",
+      "media": "mortal kombat.jpg",
+      "options": ["Tekken", "Street Fighter", "Injustice", "Mortal Kombat"],
+      "answer": 3
+    },
+    {
+      "id": "videogioco_7",
+      "media": "play station 3.jpg",
+      "options": ["PlayStation 3", "Xbox 360", "Nintendo Wii", "PlayStation 2"],
+      "answer": 0
+    },
+    {
+      "id": "videogioco_8",
+      "media": "rocket league.jpg",
+      "options": ["Forza Horizon", "Fortnite", "Rocket League", "FIFA"],
+      "answer": 2
+    },
+    {
+      "id": "videogioco_9",
+      "media": "tekken .jpg",
+      "options": ["Tekken", "Street Fighter", "Soul Calibur", "Mortal Kombat"],
+      "answer": 0
+    },
+    {
+      "id": "videogioco_10",
+      "media": "tetris.png",
+      "options": ["Bejeweled", "Dr. Mario", "Candy Crush", "Tetris"],
+      "answer": 3
+    },
+    {
+      "id": "videogioco_11",
+      "media": "wii sports resort.jpg",
+      "options": ["Wii Fit", "Wii Sports Resort", "Wii Party", "Wii Sports"],
+      "answer": 1
+    },
+    {
+      "id": "videogioco_12",
+      "media": "xbox 360.jpg",
+      "options": ["PlayStation 3", "Nintendo Wii", "Xbox 360", "Xbox One"],
+      "answer": 2
     }
   ],
   "data": [
