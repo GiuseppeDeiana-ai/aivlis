@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Guarda la Sfida alla Laureata</title>
+<link rel="stylesheet" href="/static/css/style.css?v={{ asset_version }}">
+</head>
+<body>
+<div id="welcomeScreen" class="welcome-screen">
+    <div class="welcome-ambient" id="welcomeAmbient"></div>
+    <div class="welcome-content">
+        <div class="welcome-portrait-wrap">
+            <img id="welcomePortraitImg" class="welcome-portrait" alt="La Laureata">
+        </div>
+        <h1 class="welcome-title">🍿 Festa di Laurea<br>di Silvia 🍿</h1>
+        <p class="welcome-subtitle">Siediti e goditi lo spettacolo... la battaglia sta per iniziare!</p>
+        <button class="primary welcome-enter-btn" id="welcomeEnterBtn">🍿 Inizia lo spettacolo!</button>
+    </div>
+</div>
+
+<h1>Sei uno Spettatore</h1>
+
+<div class="boss-portrait-wrap">
+    <div class="boss-portrait" id="bossPortrait">
+        <img id="bossPortraitImg" alt="La Laureata">
+    </div>
+    <div class="boss-name-tag">🐉 LA LAUREATA — BOSS FINALE</div>
+</div>
+
+<div class="hp-bar-wrap" id="hpBarWrap"><div class="hp-bar" id="hpBar" style="width:100%"></div></div>
+<div class="hp-label" id="hpLabel">HP 100/100</div>
+<div class="status" id="roundLine"></div>
+
+<div id="gameScreen" style="display:none; width:100%; max-width:480px;">
+    <div class="status" id="statusLine">Connessione in corso...</div>
+
+    <div class="card" id="lobbyCard">
+        <h3>🍿 Come funziona per te</h3>
+        <ul class="rules-list">
+            <li>👀 Sei qui solo per goderti lo spettacolo, non devi fare nulla</li>
+            <li>👑 La festeggiata risponde prima a ogni domanda</li>
+            <li>🙋 Il primo invitato che la indovina la sfida a duello</li>
+            <li>🎡 Nel duello si gira la ruota (Musica/Film/Videogiochi/Date)</li>
+            <li>⚔️ Chi risponde prima e giusto vince: ospite = danno, lei = salva</li>
+            <li>🏆 Obiettivo degli invitati: azzerare gli HP della festeggiata!</li>
+        </ul>
+        <div class="status">In attesa che la regia avvii la prima domanda...</div>
+    </div>
+
+    <div id="winnerBanner" class="winner-banner" style="display:none;"></div>
+    <div class="card" id="questionCard" style="display:none;">
+        <h3 id="questionText"></h3>
+        <div class="options" id="optionsBox"></div>
+    </div>
+
+    <div id="duelScreen" style="display:none;">
+        <h2 id="duelChallengerLine" class="center"></h2>
+        <div class="card center" id="wheelCard" style="display:none;">
+            <div class="wheel-wrap" id="wheelWrap"></div>
+            <div class="status" id="wheelStatusText">La festeggiata sta girando la ruota...</div>
+        </div>
+        <div class="card" id="duelChallengeCard" style="display:none;">
+            <h3 id="duelCategoryTitle"></h3>
+            <div id="duelMedia"></div>
+            <div class="options" id="duelOptionsBox"></div>
+            <div class="duel-timer-wrap"><div class="duel-timer-bar" id="duelTimerBar"></div></div>
+            <div class="status" id="duelSpectatorNote"></div>
+        </div>
+        <div class="card center" id="duelResultCard" style="display:none;">
+            <div id="duelResultBanner"></div>
+        </div>
+    </div>
+
+    <div class="card center" id="penanceScreen" style="display:none;">
+        <h3>Ruota delle Penitenze</h3>
+        <div class="status">La festeggiata sta cercando di guadagnare HP extra!</div>
+        <div class="wheel-wrap" id="penanceWheelWrap" style="display:none;"></div>
+        <div id="penanceRevealBox" style="display:none;">
+            <p id="penanceRevealText" style="font-size:1.1rem; font-weight:700;"></p>
+            <div class="status" id="penanceRevealHeal"></div>
+        </div>
+    </div>
+
+    <div class="card center">
+        <h3>Classifica</h3>
+        <div class="leaderboard-list" id="leaderboard"></div>
+    </div>
+</div>
+
+<script src="/static/js/wheel.js?v={{ asset_version }}"></script>
+<script src="/static/js/gallery.js?v={{ asset_version }}"></script>
+<script src="/static/js/fx.js?v={{ asset_version }}"></script>
+<script src="/static/js/leaderboard.js?v={{ asset_version }}"></script>
+<script src="/static/js/poster-reveal.js?v={{ asset_version }}"></script>
+<script src="/static/js/welcome.js?v={{ asset_version }}"></script>
+<script src="/static/js/spectate.js?v={{ asset_version }}"></script>
+</body>
+</html>

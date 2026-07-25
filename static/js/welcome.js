@@ -19,7 +19,7 @@ function startWelcomeAmbient(containerEl, count = 22) {
     }
 }
 
-function initWelcomeScreen({ welcomeEl, enterBtnEl, ambientEl, portraitImgEl }) {
+function initWelcomeScreen({ welcomeEl, enterBtnEl, ambientEl, portraitImgEl, onEnter }) {
     if (!welcomeEl || !enterBtnEl) return;
 
     startWelcomeAmbient(ambientEl);
@@ -38,6 +38,7 @@ function initWelcomeScreen({ welcomeEl, enterBtnEl, ambientEl, portraitImgEl }) 
             setTimeout(() => {
                 welcomeEl.style.display = "none";
                 document.body.style.overflow = "";
+                if (onEnter) onEnter();
             }, 650);
         }, 500);
     };

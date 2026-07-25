@@ -69,6 +69,7 @@ class Hub:
         self.regia: set[WebSocket] = set()
         self.boss: set[WebSocket] = set()
         self.guests: dict[str, WebSocket] = {}
+        self.spectators: set[WebSocket] = set()
 
     @staticmethod
     async def _send(ws: WebSocket, data: dict) -> bool:
@@ -105,8 +106,17 @@ class Hub:
             if not ok:
                 self.guests.pop(guest_id, None)
 
+    async def to_spectators(self, data: dict):
+        conns = list(self.spectators)
+        if not conns:
+            return
+        results = await asyncio.gather(*(self._send(ws, data) for ws in conns))
+        for ws, ok in zip(conns, results):
+            if not ok:
+                self.spectators.discard(ws)
+
     async def to_all(self, data: dict):
-        await asyncio.gather(self.to_regia(data), self.to_boss(data), self.to_guests(data))
+        await asyncio.gather(self.to_regia(data), self.to_boss(data), self.to_guests(data), self.to_spectators(data))
 
 
 hub = Hub()
@@ -118,7 +128,9 @@ async def log(text: str):
 
 
 async def broadcast_state():
-    await hub.to_all({"type": "state", "payload": game.public_state()})
+    payload = game.public_state()
+    payload["spectators_online"] = len(hub.spectators)
+    await hub.to_all({"type": "state", "payload": payload})
 
 
 async def check_game_over():
@@ -214,6 +226,7 @@ async def run_round_open_sequence():
     await asyncio.sleep(ROUND_COUNTDOWN_SECONDS)
     q = game.current_question
     await hub.to_guests({"type": "round_open", "payload": {"text": q["text"], "options": q["options"]}})
+    await hub.to_spectators({"type": "round_open", "payload": {"text": q["text"], "options": q["options"]}})
     await log(f"👑 La festeggiata ha risposto alla domanda {game.round_index + 1}. Ora rispondono gli invitati.")
     await broadcast_state()
 
@@ -233,6 +246,11 @@ def regia_page(request: Request):
     return templates.TemplateResponse("regia.html", {"request": request})
 
 
+@app.get("/spectate", response_class=HTMLResponse)
+def spectate_page(request: Request):
+    return templates.TemplateResponse("spectate.html", {"request": request})
+
+
 @app.get("/api/status")
 def api_status():
     return JSONResponse({"started": game.game_started})
@@ -241,6 +259,17 @@ def api_status():
 @app.get("/qr.png")
 def qr_png(request: Request):
     url = PUBLIC_URL or str(request.base_url)
+    img = qrcode.make(url)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="image/png")
+
+
+@app.get("/qr_spectate.png")
+def qr_spectate_png(request: Request):
+    base = PUBLIC_URL or str(request.base_url)
+    url = base.rstrip("/") + "/spectate"
     img = qrcode.make(url)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -294,6 +323,22 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
             game.guests[guest_id].connected = False
         hub.guests.pop(guest_id, None)
         await log(f"👤 {guest_name} si e' disconnesso")
+        await broadcast_state()
+
+
+@app.websocket("/ws/spectate")
+async def ws_spectate(websocket: WebSocket):
+    """Ruolo di sola visione: nessun nome, nessuna chiave, nessuna interazione di gioco."""
+    await websocket.accept()
+    hub.spectators.add(websocket)
+    await log(f"👀 Uno spettatore si e' collegato ({len(hub.spectators)} online)")
+    await broadcast_state()
+    try:
+        while True:
+            await websocket.receive_json()
+    except WebSocketDisconnect:
+        hub.spectators.discard(websocket)
+        await log(f"👀 Uno spettatore si e' disconnesso ({len(hub.spectators)} online)")
         await broadcast_state()
 
 
@@ -364,6 +409,7 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                         "payload": {"text": q["text"], "options": q["options"], "round": game.round_index + 1, "total": len(game.questions)},
                     })
                     await hub.to_guests({"type": "wait_boss", "payload": {}})
+                    await hub.to_spectators({"type": "wait_boss", "payload": {}})
                     await log(f"▶️ Domanda {game.round_index + 1}/{len(game.questions)} avviata.")
                 else:
                     await log("ℹ️ Non ci sono altre domande da avviare.")

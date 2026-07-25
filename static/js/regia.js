@@ -15,6 +15,7 @@ const phaseBadge = document.getElementById('phaseBadge');
 const roundBadge = document.getElementById('roundBadge');
 const onlineBadge = document.getElementById('onlineBadge');
 const answersBadge = document.getElementById('answersBadge');
+const spectatorsBadge = document.getElementById('spectatorsBadge');
 const lobbyGateBadge = document.getElementById('lobbyGateBadge');
 const startGameBtn = document.getElementById('startGameBtn');
 const winnerLine = document.getElementById('winnerLine');
@@ -119,6 +120,7 @@ function handleMessage(msg) {
         roundBadge.textContent = `round ${s.round}/${s.total_rounds}`;
         onlineBadge.textContent = `${s.guests_online} online`;
         answersBadge.textContent = `${s.answers_count} risposte`;
+        spectatorsBadge.textContent = `👀 ${s.spectators_online} spettatori`;
         lobbyGateBadge.textContent = s.started ? '🔓 ingresso invitati: aperto' : '🔒 ingresso invitati: chiuso';
         startGameBtn.disabled = s.started;
         startGameBtn.textContent = s.started ? '✅ Partita avviata' : '🚀 Avvia partita (abilita ingresso invitati)';
