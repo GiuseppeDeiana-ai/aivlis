@@ -3,6 +3,7 @@ import io
 import os
 import secrets
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import qrcode
@@ -23,8 +24,25 @@ DUEL_TIMEOUT_SECONDS = 20.0
 RETURN_HOME_SECONDS = 5.0  # quanto restare sulla schermata di risultato prima di tornare alla home
 DUEL_COUNTDOWN_SECONDS = 3.0  # conto alla rovescia dopo che la regia invia la sfida a tutti
 ROUND_COUNTDOWN_SECONDS = 3.0  # conto alla rovescia dopo la risposta del boss, prima che gli invitati vedano la domanda
+PING_INTERVAL_SECONDS = 20.0  # sotto i tipici timeout di inattivita' dei proxy cloud (es. Render, ~55-60s)
 
-app = FastAPI()
+
+async def run_ping_loop():
+    """Mantiene vive le connessioni websocket dietro un proxy cloud: senza traffico periodico,
+    un invitato che resta inattivo per circa un minuto rischia di essere disconnesso in silenzio."""
+    while True:
+        await asyncio.sleep(PING_INTERVAL_SECONDS)
+        await hub.to_all({"type": "ping", "payload": {}})
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(run_ping_loop())
+    yield
+    task.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 app.mount("/resources", StaticFiles(directory=str(BASE_DIR / "resources")), name="resources")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))

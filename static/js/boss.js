@@ -40,7 +40,10 @@ const penanceRevealHeal = document.getElementById('penanceRevealHeal');
 const penanceSpinBtn = document.getElementById('penanceSpinBtn');
 const penanceStatusLine = document.getElementById('penanceStatusLine');
 
+const PING_INTERVAL_MS = 20000; // deve corrispondere a PING_INTERVAL_SECONDS in main.py
+
 let ws = null;
+let pingInterval = null;
 let hasAnswered = false;
 let hasAnsweredDuel = false;
 let penanceSpinning = false;
@@ -55,9 +58,13 @@ function connect(key) {
         localStorage.setItem('boss_key', key);
         keyScreen.style.display = 'none';
         gameScreen.style.display = 'block';
+        pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' }));
+        }, PING_INTERVAL_MS);
     };
 
     ws.onclose = () => {
+        clearInterval(pingInterval);
         keyScreen.style.display = 'block';
         gameScreen.style.display = 'none';
         statusLine.textContent = 'Codice errato o connessione chiusa.';
@@ -74,7 +81,9 @@ function hideDuelScreen() {
 }
 
 function handleMessage(msg) {
-    if (msg.type === 'round_countdown') {
+    if (msg.type === 'ping') {
+        // keepalive, nessuna azione necessaria
+    } else if (msg.type === 'round_countdown') {
         statusLine.textContent = 'Il conto alla rovescia e iniziato per gli invitati...';
         fxCountdown(msg.payload.seconds);
     } else if (msg.type === 'round_started') {

@@ -39,7 +39,10 @@ const penanceRevealBox = document.getElementById('penanceRevealBox');
 const penanceRevealText = document.getElementById('penanceRevealText');
 const penanceRevealHeal = document.getElementById('penanceRevealHeal');
 
+const PING_INTERVAL_MS = 20000; // deve corrispondere a PING_INTERVAL_SECONDS in main.py
+
 let ws = null;
+let pingInterval = null;
 let hasAnsweredThisRound = false;
 let hasAnsweredDuel = false;
 let gameOverShown = false;
@@ -61,6 +64,9 @@ function connect(name) {
     ws.onopen = () => {
         joinScreen.style.display = 'none';
         gameScreen.style.display = 'block';
+        pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' }));
+        }, PING_INTERVAL_MS);
     };
 
     ws.onmessage = (event) => {
@@ -69,6 +75,7 @@ function connect(name) {
     };
 
     ws.onclose = () => {
+        clearInterval(pingInterval);
         statusLine.textContent = 'Connessione persa, ricarica la pagina...';
     };
 }
@@ -81,7 +88,9 @@ function hideDuelScreen() {
 }
 
 function handleMessage(msg) {
-    if (msg.type === 'welcome') {
+    if (msg.type === 'ping') {
+        // keepalive, nessuna azione necessaria
+    } else if (msg.type === 'welcome') {
         localStorage.setItem('guest_name', msg.payload.name);
     } else if (msg.type === 'wait_boss') {
         hasAnsweredThisRound = false;

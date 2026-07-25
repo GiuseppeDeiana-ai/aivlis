@@ -51,8 +51,10 @@ const confirmSendBtn = document.getElementById('confirmSendBtn');
 
 const logPanel = document.getElementById('logPanel');
 const MAX_LOG_ENTRIES = 60;
+const PING_INTERVAL_MS = 20000; // deve corrispondere a PING_INTERVAL_SECONDS in main.py
 
 let ws = null;
+let pingInterval = null;
 let gameOverShown = false;
 let currentMusicAudio = null;
 
@@ -75,9 +77,13 @@ function connect(key) {
         localStorage.setItem('regia_key', key);
         keyScreen.style.display = 'none';
         panel.style.display = 'block';
+        pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' }));
+        }, PING_INTERVAL_MS);
     };
 
     ws.onclose = () => {
+        clearInterval(pingInterval);
         keyScreen.style.display = 'block';
         panel.style.display = 'none';
     };
@@ -93,7 +99,9 @@ function hideDuelScreen() {
 }
 
 function handleMessage(msg) {
-    if (msg.type === 'log') {
+    if (msg.type === 'ping') {
+        // keepalive, nessuna azione necessaria
+    } else if (msg.type === 'log') {
         addLogEntry(msg.payload.ts, msg.payload.text);
     } else if (msg.type === 'return_home') {
         hideDuelScreen();
