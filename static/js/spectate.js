@@ -98,6 +98,12 @@ function handleMessage(msg) {
         renderChatHistory(chatMessages, msg.payload.messages);
     } else if (msg.type === 'chat_message') {
         renderChatMessage(chatMessages, msg.payload);
+    } else if (msg.type === 'chat_spotlight') {
+        fxChatSpotlight(msg.payload.name, msg.payload.avatar, msg.payload.text);
+    } else if (msg.type === 'milestone') {
+        fxMilestoneToast(msg.payload.emoji, msg.payload.text);
+    } else if (msg.type === 'reaction') {
+        fxFloatingReaction(msg.payload.emoji);
     } else if (msg.type === 'wait_boss') {
         questionCard.style.display = 'none';
         winnerBanner.style.display = 'none';
@@ -167,6 +173,7 @@ function handleMessage(msg) {
     } else if (msg.type === 'duel_countdown') {
         wheelStatusText.textContent = 'La sfida si apre a momenti!';
         fxCountdown(msg.payload.seconds);
+        fxVignette(msg.payload.seconds);
     } else if (msg.type === 'duel_challenge') {
         showDuelChallenge(msg.payload);
     } else if (msg.type === 'duel_answer_registered') {
@@ -302,7 +309,7 @@ function showDuelChallenge(payload) {
         duelMedia.appendChild(img);
     } else if (payload.prompt) {
         const div = document.createElement('div');
-        div.className = payload.category === 'data' ? 'status data-parchment' : 'status';
+        div.className = (payload.category === 'data' || payload.category === 'cultura_generale') ? 'status data-parchment' : 'status';
         div.style.fontSize = '2rem';
         div.style.fontWeight = 'bold';
         div.textContent = payload.prompt;
@@ -362,3 +369,17 @@ function updateState(state) {
     }
     renderLeaderboard(leaderboard, state.leaderboard);
 }
+
+// L'anteprima locale non serve: il broadcast del server (hub.to_all) raggiunge anche
+// chi ha appena toccato il pulsante, quindi basta inviare e aspettare l'eco per tutti insieme.
+let lastReactionSentAt = 0;
+document.querySelectorAll('.reaction-btn').forEach((btn) => {
+    btn.onclick = () => {
+        const now = Date.now();
+        if (now - lastReactionSentAt < 600) return;
+        lastReactionSentAt = now;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'reaction', emoji: btn.dataset.emoji }));
+        }
+    };
+});

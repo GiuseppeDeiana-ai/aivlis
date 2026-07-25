@@ -306,5 +306,91 @@
       "options": ["2008", "2010", "2012", "2014"],
       "answer": 1
     }
+  ],
+  "cultura_generale": [
+    {
+      "id": "cultura_1",
+      "kind": "trivia",
+      "prompt": "Qual e' la capitale dell'Australia?",
+      "options": ["Canberra", "Sydney", "Melbourne", "Perth"],
+      "answer": 0
+    },
+    {
+      "id": "cultura_2",
+      "kind": "trivia",
+      "prompt": "Quanti pianeti ci sono nel sistema solare?",
+      "options": ["10", "9", "7", "8"],
+      "answer": 3
+    },
+    {
+      "id": "cultura_3",
+      "kind": "trivia",
+      "prompt": "Chi ha scritto la Divina Commedia?",
+      "options": ["Petrarca", "Dante Alighieri", "Boccaccio", "Ariosto"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_4",
+      "kind": "trivia",
+      "prompt": "Qual e' l'oceano piu' grande del mondo?",
+      "options": ["Pacifico", "Atlantico", "Indiano", "Artico"],
+      "answer": 0
+    },
+    {
+      "id": "cultura_5",
+      "kind": "trivia",
+      "prompt": "In che anno e' caduto l'Impero Romano d'Occidente?",
+      "options": ["376", "410", "800", "476"],
+      "answer": 3
+    },
+    {
+      "id": "cultura_6",
+      "kind": "trivia",
+      "prompt": "Qual e' il metallo piu' leggero?",
+      "options": ["Alluminio", "Magnesio", "Litio", "Titanio"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_7",
+      "kind": "trivia",
+      "prompt": "Quante ossa ha il corpo umano adulto?",
+      "options": ["206", "186", "226", "246"],
+      "answer": 0
+    },
+    {
+      "id": "cultura_8",
+      "kind": "trivia",
+      "prompt": "Qual e' il fiume piu' lungo del mondo?",
+      "options": ["Amazzonas", "Nilo", "Yangtze", "Mississippi"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_9",
+      "kind": "trivia",
+      "prompt": "Chi ha dipinto la Gioconda?",
+      "options": ["Michelangelo", "Raffaello", "Caravaggio", "Leonardo da Vinci"],
+      "answer": 3
+    },
+    {
+      "id": "cultura_10",
+      "kind": "trivia",
+      "prompt": "Qual e' la montagna piu' alta del mondo?",
+      "options": ["K2", "Everest", "Monte Bianco", "Kilimangiaro"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_11",
+      "kind": "trivia",
+      "prompt": "Quanti anelli ci sono nella bandiera olimpica?",
+      "options": ["4", "6", "5", "7"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_12",
+      "kind": "trivia",
+      "prompt": "Qual e' la lingua piu' parlata al mondo come madrelingua?",
+      "options": ["Cinese mandarino", "Inglese", "Spagnolo", "Hindi"],
+      "answer": 0
+    }
   ]
 }

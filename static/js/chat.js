@@ -9,12 +9,14 @@ function chatEmptyHint() {
     return hint;
 }
 
-function renderChatMessage(container, msg, myGuestId) {
+function renderChatMessage(container, msg, myGuestId, onSpotlight) {
     const emptyHint = container.querySelector('.chat-empty-hint');
     if (emptyHint) emptyHint.remove();
 
     const row = document.createElement('div');
-    row.className = 'chat-message' + (myGuestId && msg.id === myGuestId ? ' chat-message-you' : '');
+    row.className = 'chat-message'
+        + (myGuestId && msg.id === myGuestId ? ' chat-message-you' : '')
+        + (onSpotlight ? ' spotlightable' : '');
 
     const avatarEl = document.createElement('div');
     avatarEl.className = 'chat-message-avatar';
@@ -40,17 +42,21 @@ function renderChatMessage(container, msg, myGuestId) {
 
     row.appendChild(avatarEl);
     row.appendChild(body);
+    if (onSpotlight) {
+        row.title = 'Tocca per mettere in evidenza su tutti gli schermi';
+        row.onclick = () => onSpotlight(msg);
+    }
     container.appendChild(row);
     container.scrollTop = container.scrollHeight;
 }
 
-function renderChatHistory(container, messages, myGuestId) {
+function renderChatHistory(container, messages, myGuestId, onSpotlight) {
     container.innerHTML = '';
     if (!messages || messages.length === 0) {
         container.appendChild(chatEmptyHint());
         return;
     }
-    messages.forEach((msg) => renderChatMessage(container, msg, myGuestId));
+    messages.forEach((msg) => renderChatMessage(container, msg, myGuestId, onSpotlight));
 }
 
 function clearChatDisplay(container) {

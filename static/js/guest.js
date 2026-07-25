@@ -55,6 +55,7 @@ const duelResultBanner = document.getElementById('duelResultBanner');
 const duelTimerBar = document.getElementById('duelTimerBar');
 const wheelStatusText = document.getElementById('wheelStatusText');
 const roundTimerBar = document.getElementById('roundTimerBar');
+const answersCountLine = document.getElementById('answersCountLine');
 
 const DUEL_TIMEOUT_SECONDS_JS = 20; // deve corrispondere a DUEL_TIMEOUT_SECONDS in main.py
 const ROUND_REVEAL_SECONDS_JS = 20; // deve corrispondere a ROUND_REVEAL_SECONDS in main.py
@@ -235,6 +236,8 @@ function handleMessage(msg) {
         winnerBanner.style.display = 'none';
         hideDuelScreen();
         statusLine.textContent = 'La laureata sta rispondendo... preparati!';
+    } else if (msg.type === 'milestone') {
+        fxMilestoneToast(msg.payload.emoji, msg.payload.text);
     } else if (msg.type === 'round_countdown') {
         statusLine.textContent = 'Ha risposto! La domanda sta per aprirsi...';
         fxCountdown(msg.payload.seconds);
@@ -254,6 +257,7 @@ function handleMessage(msg) {
         });
         questionCard.style.display = 'block';
         startCountdownBar(roundTimerBar, msg.payload.seconds || ROUND_REVEAL_SECONDS_JS);
+        if (answersCountLine) answersCountLine.textContent = '';
     } else if (msg.type === 'answer_ack') {
         if (msg.payload.status === 'correct') {
             statusLine.textContent = 'Hai indovinato! Aspettiamo chi è stato il più veloce...';
@@ -290,6 +294,7 @@ function handleMessage(msg) {
     } else if (msg.type === 'duel_countdown') {
         wheelStatusText.textContent = 'La sfida si apre a momenti!';
         fxCountdown(msg.payload.seconds);
+        fxVignette(msg.payload.seconds);
     } else if (msg.type === 'duel_challenge') {
         showDuelChallenge(msg.payload);
     } else if (msg.type === 'duel_answer_registered') {
@@ -444,7 +449,7 @@ function showDuelChallenge(payload) {
         duelMedia.appendChild(img);
     } else if (payload.prompt) {
         const div = document.createElement('div');
-        div.className = payload.category === 'data' ? 'status data-parchment' : 'status';
+        div.className = (payload.category === 'data' || payload.category === 'cultura_generale') ? 'status data-parchment' : 'status';
         div.style.fontSize = '2rem';
         div.style.fontWeight = 'bold';
         div.textContent = payload.prompt;
@@ -504,6 +509,11 @@ function updateState(state) {
     hpBar.style.width = pct + '%';
     hpLabel.textContent = `HP ${state.hp}/${state.max_hp}`;
     lobbyCard.style.display = state.phase === 'lobby' ? 'block' : 'none';
+    if (answersCountLine) {
+        answersCountLine.textContent = state.phase === 'guests_answering'
+            ? `📊 ${state.answers_count} ${state.answers_count === 1 ? 'persona ha' : 'persone hanno'} già risposto...`
+            : '';
+    }
     document.body.classList.toggle('enrage-mode', state.hp > 0 && pct < 25);
     if (!halfHpAnnounced && state.hp > 0 && pct <= 50) {
         halfHpAnnounced = true;

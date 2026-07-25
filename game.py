@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-DUEL_CATEGORIES = ["musica", "film", "videogioco", "data"]
+DUEL_CATEGORIES = ["musica", "film", "videogioco", "data", "cultura_generale"]
 DUEL_DAMAGE = 25
 DUEL_WIN_BONUS_SCORE = 1
 BOSS_ID = "boss"
@@ -42,6 +42,8 @@ class Guest:
     avatar: Optional[str] = None
     last_answered_round: int = -1
     answer_streak: int = 0
+    max_answer_streak: int = 0
+    total_answers: int = 0
     last_chat_at: Optional[float] = None
 
 
@@ -52,6 +54,9 @@ class GameState:
         self.penances: list[str] = json.loads(Path(penances_path).read_text(encoding="utf-8"))
         self.game_started = False
         self.round_index = -1
+        self.used_question_indices: set[int] = set()
+        self.current_question_index: Optional[int] = None
+        self.first_duel_win_announced: bool = False
         self.phase = Phase.LOBBY
         self.boss_answer: Optional[int] = None
         self.round_open_at: Optional[float] = None
@@ -77,14 +82,21 @@ class GameState:
 
     @property
     def current_question(self):
-        if 0 <= self.round_index < len(self.questions):
-            return self.questions[self.round_index]
+        if self.current_question_index is not None:
+            return self.questions[self.current_question_index]
         return None
 
     def start_round(self) -> bool:
-        if self.round_index + 1 >= len(self.questions):
-            self.phase = Phase.GAME_OVER
+        """Le domande classiche sono pescate a caso senza ripetizioni finche' non sono
+        state usate tutte; a quel punto il mazzo si rimescola e si continua all'infinito -
+        cosi' la partita non finisce mai per "esaurimento domande", solo per HP a zero."""
+        if not self.questions:
             return False
+        if len(self.used_question_indices) >= len(self.questions):
+            self.used_question_indices = set()
+        pool = [i for i in range(len(self.questions)) if i not in self.used_question_indices]
+        self.current_question_index = random.choice(pool)
+        self.used_question_indices.add(self.current_question_index)
         self.round_index += 1
         self.phase = Phase.BOSS_ANSWERING
         self.boss_answer = None
@@ -124,11 +136,14 @@ class GameState:
         is_correct = choice == self.boss_answer
         if guest_id in self.guests:
             guest = self.guests[guest_id]
+            guest.total_answers += 1
             if guest.last_answered_round == self.round_index - 1:
                 guest.answer_streak += 1
             else:
                 guest.answer_streak = 1
             guest.last_answered_round = self.round_index
+            if guest.answer_streak > guest.max_answer_streak:
+                guest.max_answer_streak = guest.answer_streak
             if is_correct:
                 guest.correct_answers += 1
                 if self.round_open_at is not None:
@@ -214,6 +229,9 @@ class GameState:
     def reset(self):
         self.game_started = False
         self.round_index = -1
+        self.used_question_indices = set()
+        self.current_question_index = None
+        self.first_duel_win_announced = False
         self.phase = Phase.LOBBY
         self.boss_answer = None
         self.guest_answers = {}
@@ -487,6 +505,46 @@ class GameState:
                 "title": "Il più combattivo",
                 "name": best.name,
                 "detail": f"{best.duels_won + best.duels_lost} duelli affrontati",
+            })
+
+        participative = [g for g in guests if g.total_answers > 0]
+        if participative:
+            best = max(participative, key=lambda g: g.total_answers)
+            awards.append({
+                "emoji": "🎲",
+                "title": "Il più partecipativo",
+                "name": best.name,
+                "detail": f"ha risposto a {best.total_answers} domande",
+            })
+
+        streakers = [g for g in guests if g.max_answer_streak > 0]
+        if streakers:
+            best = max(streakers, key=lambda g: g.max_answer_streak)
+            awards.append({
+                "emoji": "📈",
+                "title": "Record di serie",
+                "name": best.name,
+                "detail": f"{best.max_answer_streak} domande di fila senza saltarne una",
+            })
+
+        calm = [g for g in guests if g.fastest_correct_seconds is not None]
+        if calm:
+            worst = max(calm, key=lambda g: g.fastest_correct_seconds)
+            awards.append({
+                "emoji": "🐢",
+                "title": "Il più tranquillo",
+                "name": worst.name,
+                "detail": f"si e' preso {worst.fastest_correct_seconds:.1f}s, ma e' arrivato",
+            })
+
+        participants_with_score = [g for g in guests if g.total_answers > 0]
+        if participants_with_score:
+            worst = min(participants_with_score, key=lambda g: g.score)
+            awards.append({
+                "emoji": "🥄",
+                "title": "Il cucchiaio di legno",
+                "name": worst.name,
+                "detail": f"solo {worst.score} punti, ma tanto cuore",
             })
 
         return awards

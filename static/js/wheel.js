@@ -1,4 +1,4 @@
-// Ruote condivise (scontro diretto a 4 categorie + ruota delle penitenze a N segmenti).
+// Ruote condivise (scontro diretto a 5 categorie + ruota delle penitenze a N segmenti).
 // La durata della rotazione (3s) deve corrispondere a WHEEL_SPIN_SECONDS in main.py
 // cosi' tutti i dispositivi mostrano la ruota fermarsi nello stesso istante.
 
@@ -7,6 +7,7 @@ const WHEEL_CATEGORIES = [
     { key: "film", label: "FILM", color: "#f9d423" },
     { key: "videogioco", label: "VIDEOGIOCO", color: "#6a3df0" },
     { key: "data", label: "DATA", color: "#00c9a7" },
+    { key: "cultura_generale", label: "CULTURA GEN.", color: "#43aa8b" },
 ];
 
 const WHEEL_PALETTE = ["#ff4e50", "#f9d423", "#6a3df0", "#00c9a7", "#00b4d8", "#f77f00", "#e63946", "#43aa8b"];

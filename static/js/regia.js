@@ -106,6 +106,14 @@ function hideDuelScreen() {
     wheelCard.style.display = 'none';
     duelChallengeCard.style.display = 'none';
     duelResultCard.style.display = 'none';
+    // La canzone di un duello musica non deve MAI restare a suonare in sottofondo
+    // una volta che lo schermo del duello si nasconde (es. al "torna alla home"):
+    // a quel punto il pulsante per fermarla e' sparito insieme al resto, quindi va
+    // fermata qui, altrimenti resta in esecuzione senza che nessuno possa piu' stopparla.
+    if (currentMusicAudio) {
+        currentMusicAudio.pause();
+        currentMusicAudio = null;
+    }
 }
 
 function handleMessage(msg) {
@@ -113,10 +121,14 @@ function handleMessage(msg) {
         // keepalive, nessuna azione necessaria
     } else if (msg.type === 'log') {
         addLogEntry(msg.payload.ts, msg.payload.text);
+    } else if (msg.type === 'milestone') {
+        fxMilestoneToast(msg.payload.emoji, msg.payload.text);
+    } else if (msg.type === 'chat_spotlight') {
+        fxChatSpotlight(msg.payload.name, msg.payload.avatar, msg.payload.text);
     } else if (msg.type === 'chat_history') {
-        renderChatHistory(chatMessages, msg.payload.messages);
+        renderChatHistory(chatMessages, msg.payload.messages, null, sendChatSpotlight);
     } else if (msg.type === 'chat_message') {
-        renderChatMessage(chatMessages, msg.payload);
+        renderChatMessage(chatMessages, msg.payload, null, sendChatSpotlight);
     } else if (msg.type === 'chat_cleared') {
         clearChatDisplay(chatMessages);
     } else if (msg.type === 'answer_progress') {
@@ -230,6 +242,7 @@ function handleMessage(msg) {
     } else if (msg.type === 'duel_countdown') {
         duelSendPopup.style.display = 'none';
         fxCountdown(msg.payload.seconds, 'La sfida sta per aprirsi!');
+        fxVignette(msg.payload.seconds);
     } else if (msg.type === 'round_countdown') {
         fxCountdown(msg.payload.seconds, 'La domanda sta per aprirsi!');
         setTimeout(() => startTickCountdown(ROUND_REVEAL_SECONDS_JS), msg.payload.seconds * 1000);
@@ -288,7 +301,7 @@ function handleMessage(msg) {
             duelMedia.appendChild(img);
         } else if (msg.payload.prompt) {
             const div = document.createElement('div');
-            div.className = msg.payload.category === 'data' ? 'status data-parchment' : 'status';
+            div.className = (msg.payload.category === 'data' || msg.payload.category === 'cultura_generale') ? 'status data-parchment' : 'status';
             div.style.fontSize = '2rem';
             div.style.fontWeight = 'bold';
             div.textContent = msg.payload.prompt;
@@ -415,6 +428,10 @@ clearChatBtn.onclick = () => {
         ws.send(JSON.stringify({ type: 'clear_chat' }));
     }
 };
+
+function sendChatSpotlight(msg) {
+    ws.send(JSON.stringify({ type: 'spotlight_chat', name: msg.name, avatar: msg.avatar, text: msg.text }));
+}
 
 enterBtn.onclick = () => {
     const key = keyInput.value.trim();

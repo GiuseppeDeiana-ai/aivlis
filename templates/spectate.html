@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Laurea di Silvia">
 <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version }}">
 </head>
-<body>
+<body class="spectate-page">
 <div id="welcomeScreen" class="welcome-screen">
     <div class="welcome-ambient" id="welcomeAmbient"></div>
     <div class="welcome-content">
@@ -35,8 +35,16 @@
 <div class="hp-label" id="hpLabel">HP 100/100</div>
 <div class="status" id="roundLine"></div>
 
-<div id="gameScreen" style="display:none; width:100%; max-width:480px;">
+<div id="gameScreen" style="display:none; width:100%;">
     <div class="status" id="statusLine">Connessione in corso...</div>
+
+    <div class="reaction-bar">
+        <button class="reaction-btn" data-emoji="🔥">🔥</button>
+        <button class="reaction-btn" data-emoji="😱">😱</button>
+        <button class="reaction-btn" data-emoji="👏">👏</button>
+        <button class="reaction-btn" data-emoji="😂">😂</button>
+        <button class="reaction-btn" data-emoji="❤️">❤️</button>
+    </div>
 
     <div class="card" id="lobbyCard">
         <h3>🍿 Come funziona per te</h3>
@@ -88,14 +96,16 @@
         </div>
     </div>
 
-    <div class="card center">
-        <h3>Classifica</h3>
-        <div class="leaderboard-list" id="leaderboard"></div>
-    </div>
+    <div class="tv-columns">
+        <div class="card center">
+            <h3>Classifica</h3>
+            <div class="leaderboard-list" id="leaderboard"></div>
+        </div>
 
-    <div class="card">
-        <h3 class="center">💬 Chat della festa</h3>
-        <div class="chat-messages" id="chatMessages"></div>
+        <div class="card">
+            <h3 class="center">💬 Chat della festa</h3>
+            <div class="chat-messages" id="chatMessages"></div>
+        </div>
     </div>
 </div>
 

@@ -182,6 +182,22 @@
    {
     "text": "Qual e' il suo souvenir di viaggio preferito da comprare?",
     "options": ["Un magnete", "Una foto ricordo", "penne/matite", "Bicchierino"]
+  },
+  {
+    "text": "Che numero sceglierebbe Silvia tra questi?",
+    "options": ["7", "13", "21", "42"]
+  },
+  {
+    "text": "Se dovesse pescare una carta a caso, quale sarebbe?",
+    "options": ["Asso di cuori", "Re di picche", "Jolly", "Sette bello"]
+  },
+  {
+    "text": "Se dovesse scegliere un colore a sorte tra questi, quale sarebbe?",
+    "options": ["Rosso", "Blu", "Verde", "Giallo"]
+  },
+  {
+    "text": "Testa o croce (o quasi): cosa direbbe Silvia?",
+    "options": ["Testa", "Croce", "Rilancio", "Non gioco"]
   }
 ]
 

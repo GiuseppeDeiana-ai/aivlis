@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from game import BOSS_ID, GameState
+from game import BOSS_ID, MAX_CHAT_LENGTH, GameState
 
 BASE_DIR = Path(__file__).parent
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "110201")
@@ -26,6 +26,10 @@ DUEL_COUNTDOWN_SECONDS = 3.0  # conto alla rovescia dopo che la regia invia la s
 ROUND_COUNTDOWN_SECONDS = 3.0  # conto alla rovescia dopo la risposta del boss, prima che gli invitati vedano la domanda
 ROUND_REVEAL_SECONDS = 20.0  # finestra di risposta per gli invitati prima di rivelare chi ha indovinato per primo
 PING_INTERVAL_SECONDS = 20.0  # sotto i tipici timeout di inattivita' dei proxy cloud (es. Render, ~55-60s)
+
+REACTION_EMOJIS = {"🔥", "😱", "👏", "😂", "❤️"}
+REACTION_COOLDOWN_SECONDS = 0.6  # evita lo spam di tap ma resta abbastanza rapido da sentirsi "live"
+MILESTONE_STREAKS = (3, 5, 10)
 
 
 async def run_ping_loop():
@@ -180,6 +184,12 @@ def cancel_round_reveal():
 
 async def broadcast_duel_result(payload: dict):
     await hub.to_all({"type": "duel_result", "payload": payload})
+    if payload["outcome"] == "challenger" and not game.first_duel_win_announced:
+        game.first_duel_win_announced = True
+        await hub.to_all({
+            "type": "milestone",
+            "payload": {"emoji": "🥇", "text": f"Prima vittoria della serata: {payload['winner_name']}!"},
+        })
     await broadcast_state()
     outcome = payload["outcome"]
     if outcome == "challenger":
@@ -355,10 +365,11 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                     await hub._send(websocket, {"type": "answer_ack", "payload": {"status": "not_open_or_duplicate"}})
                 else:
                     await hub._send(websocket, {"type": "answer_ack", "payload": {"status": "correct" if result else "wrong"}})
+                    guest_obj = game.guests.get(guest_id)
                     ticker_payload = {
                         "name": guest_name,
-                        "avatar": game.guests[guest_id].avatar if guest_id in game.guests else None,
-                        "streak": game.guests[guest_id].answer_streak if guest_id in game.guests else 1,
+                        "avatar": guest_obj.avatar if guest_obj else None,
+                        "streak": guest_obj.answer_streak if guest_obj else 1,
                     }
                     await hub.to_regia({"type": "answer_progress", "payload": ticker_payload})
                     await hub.to_spectators({"type": "answer_progress", "payload": ticker_payload})
@@ -367,6 +378,17 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                     else:
                         await log(f"❌ {guest_name} ha risposto, ma diverso dalla festeggiata.")
                     await broadcast_state()
+                    if guest_obj:
+                        if result and guest_obj.correct_answers == 1:
+                            await hub.to_all({
+                                "type": "milestone",
+                                "payload": {"emoji": "🎯", "text": f"{guest_name} ha risposto correttamente per la prima volta!"},
+                            })
+                        if guest_obj.answer_streak in MILESTONE_STREAKS:
+                            await hub.to_all({
+                                "type": "milestone",
+                                "payload": {"emoji": "🔥", "text": f"{guest_name} è a una striscia di {guest_obj.answer_streak}!"},
+                            })
             elif t == "set_avatar":
                 avatar = data.get("avatar", "")
                 if game.set_avatar(guest_id, avatar):
@@ -400,9 +422,17 @@ async def ws_spectate(websocket: WebSocket):
     await hub._send(websocket, {"type": "chat_history", "payload": {"messages": game.chat_messages}})
     await log(f"👀 Uno spettatore si e' collegato ({len(hub.spectators)} online)")
     await broadcast_state()
+    last_reaction_at = 0.0
     try:
         while True:
-            await websocket.receive_json()
+            data = await websocket.receive_json()
+            t = data.get("type")
+            if t == "reaction":
+                emoji = data.get("emoji")
+                now = time.time()
+                if emoji in REACTION_EMOJIS and now - last_reaction_at >= REACTION_COOLDOWN_SECONDS:
+                    last_reaction_at = now
+                    await hub.to_all({"type": "reaction", "payload": {"emoji": emoji}})
     except WebSocketDisconnect:
         hub.spectators.discard(websocket)
         await log(f"👀 Uno spettatore si e' disconnesso ({len(hub.spectators)} online)")
@@ -467,6 +497,15 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 game.clear_chat()
                 await hub.to_audience({"type": "chat_cleared", "payload": {}})
                 await log("🧹 Chat svuotata dalla regia.")
+            elif t == "spotlight_chat":
+                spot_name = str(data.get("name", ""))[:24]
+                spot_text = str(data.get("text", ""))[:MAX_CHAT_LENGTH]
+                if spot_text:
+                    await hub.to_audience({
+                        "type": "chat_spotlight",
+                        "payload": {"name": spot_name, "avatar": data.get("avatar"), "text": spot_text},
+                    })
+                    await log(f"📌 Messaggio di {spot_name} messo in evidenza dalla regia.")
             elif t == "start_game":
                 if game.start_game():
                     await log("🎉 Partita avviata dalla regia! Gli invitati possono entrare.")

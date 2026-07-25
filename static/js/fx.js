@@ -11,6 +11,7 @@ const FX_CATEGORY_EMOJI = {
     film: ["🎬", "🍿"],
     videogioco: ["🎮", "👾"],
     data: ["⏳", "📜"],
+    cultura_generale: ["🧠", "📚"],
 };
 
 function fxRandom(arr) {
@@ -504,4 +505,90 @@ function fxRevealLeaderboard(leaderboard, awards = [], opts = {}) {
     }
 
     revealNextAward();
+}
+
+// ---- Vignetta di tensione durante il conto alla rovescia del duello ----
+
+let fxVignetteTimeout = null;
+
+function fxVignette(seconds) {
+    let el = document.getElementById("fxVignetteEl");
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "fxVignetteEl";
+        el.className = "fx-vignette";
+        document.body.appendChild(el);
+    }
+    if (fxVignetteTimeout) clearTimeout(fxVignetteTimeout);
+    requestAnimationFrame(() => el.classList.add("active"));
+    fxVignetteTimeout = setTimeout(() => el.classList.remove("active"), seconds * 1000);
+}
+
+// ---- Notifiche istantanee di traguardo (non solo nel gran finale) ----
+
+function fxMilestoneToast(emoji, text) {
+    let wrap = document.getElementById("milestoneToastWrap");
+    if (!wrap) {
+        wrap = document.createElement("div");
+        wrap.id = "milestoneToastWrap";
+        wrap.className = "milestone-toast-wrap";
+        document.body.appendChild(wrap);
+    }
+    const toast = document.createElement("div");
+    toast.className = "milestone-toast";
+    const emojiEl = document.createElement("span");
+    emojiEl.textContent = emoji;
+    const textEl = document.createElement("span");
+    textEl.textContent = text;
+    toast.appendChild(emojiEl);
+    toast.appendChild(textEl);
+    wrap.appendChild(toast);
+    setTimeout(() => toast.remove(), 3200);
+}
+
+// ---- Reazioni live degli spettatori, fluttuanti su tutti gli schermi ----
+
+function fxFloatingReaction(emoji) {
+    const el = document.createElement("div");
+    el.className = "fx-reaction-float";
+    el.textContent = emoji;
+    el.style.left = `${10 + Math.random() * 80}%`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2300);
+}
+
+// ---- Spotlight su un messaggio della chat (attivato solo dalla regia) ----
+
+function fxChatSpotlight(name, avatar, text) {
+    const existing = document.getElementById("fxChatSpotlightEl");
+    if (existing) existing.remove();
+    const card = document.createElement("div");
+    card.id = "fxChatSpotlightEl";
+    card.className = "fx-chat-spotlight";
+
+    const avatarEl = document.createElement("div");
+    avatarEl.className = "fx-chat-spotlight-avatar";
+    if (avatar) {
+        const img = document.createElement("img");
+        img.src = avatar;
+        img.alt = "";
+        avatarEl.appendChild(img);
+    } else {
+        avatarEl.textContent = "🙂";
+    }
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "fx-chat-spotlight-name";
+    nameEl.textContent = name;
+
+    const textEl = document.createElement("div");
+    textEl.className = "fx-chat-spotlight-text";
+    textEl.textContent = text;
+
+    card.appendChild(avatarEl);
+    card.appendChild(nameEl);
+    card.appendChild(textEl);
+    document.body.appendChild(card);
+    fxConfetti(30, 2000);
+    setTimeout(() => card.remove(), 5000);
 }

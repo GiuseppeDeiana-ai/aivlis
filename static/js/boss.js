@@ -95,6 +95,8 @@ function hideDuelScreen() {
 function handleMessage(msg) {
     if (msg.type === 'ping') {
         // keepalive, nessuna azione necessaria
+    } else if (msg.type === 'milestone') {
+        fxMilestoneToast(msg.payload.emoji, msg.payload.text);
     } else if (msg.type === 'round_countdown') {
         statusLine.textContent = 'Il conto alla rovescia e iniziato per gli invitati...';
         fxCountdown(msg.payload.seconds);
@@ -149,6 +151,7 @@ function handleMessage(msg) {
     } else if (msg.type === 'duel_countdown') {
         wheelStatusText.textContent = 'La sfida si apre a momenti!';
         fxCountdown(msg.payload.seconds);
+        fxVignette(msg.payload.seconds);
     } else if (msg.type === 'duel_challenge') {
         wheelCard.style.display = 'none';
         duelResultCard.style.display = 'none';
@@ -185,7 +188,7 @@ function handleMessage(msg) {
             duelMedia.appendChild(img);
         } else if (msg.payload.prompt) {
             const div = document.createElement('div');
-            div.className = msg.payload.category === 'data' ? 'status data-parchment' : 'status';
+            div.className = (msg.payload.category === 'data' || msg.payload.category === 'cultura_generale') ? 'status data-parchment' : 'status';
             div.style.fontSize = '2rem';
             div.style.fontWeight = 'bold';
             div.textContent = msg.payload.prompt;
