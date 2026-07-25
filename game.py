@@ -38,6 +38,7 @@ class GameState:
         self.questions = json.loads(Path(questions_path).read_text(encoding="utf-8"))
         self.duels: dict[str, list[dict]] = json.loads(Path(duels_path).read_text(encoding="utf-8"))
         self.penances: list[str] = json.loads(Path(penances_path).read_text(encoding="utf-8"))
+        self.game_started = False
         self.round_index = -1
         self.phase = Phase.LOBBY
         self.boss_answer: Optional[int] = None
@@ -116,7 +117,14 @@ class GameState:
         if self.hp == 0:
             self.phase = Phase.GAME_OVER
 
+    def start_game(self) -> bool:
+        if self.game_started:
+            return False
+        self.game_started = True
+        return True
+
     def reset(self):
+        self.game_started = False
         self.round_index = -1
         self.phase = Phase.LOBBY
         self.boss_answer = None
@@ -322,6 +330,7 @@ class GameState:
         if self.challenger_id and self.challenger_id in self.guests:
             challenger_name = self.guests[self.challenger_id].name
         return {
+            "started": self.game_started,
             "phase": self.phase.value,
             "round": self.round_index + 1,
             "total_rounds": len(self.questions),

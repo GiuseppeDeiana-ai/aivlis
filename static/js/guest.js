@@ -1,3 +1,4 @@
+const lockScreen = document.getElementById('lockScreen');
 const joinScreen = document.getElementById('joinScreen');
 const gameScreen = document.getElementById('gameScreen');
 const nameInput = document.getElementById('nameInput');
@@ -16,6 +17,13 @@ const bossPortrait = document.getElementById('bossPortrait');
 const bossPortraitImg = document.getElementById('bossPortraitImg');
 
 startPortraitRotation(bossPortraitImg);
+
+initWelcomeScreen({
+    welcomeEl: document.getElementById('welcomeScreen'),
+    enterBtnEl: document.getElementById('welcomeEnterBtn'),
+    ambientEl: document.getElementById('welcomeAmbient'),
+    portraitImgEl: document.getElementById('welcomePortraitImg'),
+});
 
 const duelScreen = document.getElementById('duelScreen');
 const duelChallengerLine = document.getElementById('duelChallengerLine');
@@ -47,6 +55,30 @@ let posterReveal = null;
 let hasAnsweredThisRound = false;
 let hasAnsweredDuel = false;
 let gameOverShown = false;
+let lobbyPollTimer = null;
+
+async function checkLobbyStatus() {
+    try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        if (data.started) {
+            if (lobbyPollTimer) {
+                clearInterval(lobbyPollTimer);
+                lobbyPollTimer = null;
+            }
+            lockScreen.style.display = 'none';
+            joinScreen.style.display = 'block';
+        } else {
+            joinScreen.style.display = 'none';
+            lockScreen.style.display = 'block';
+            if (!lobbyPollTimer) {
+                lobbyPollTimer = setInterval(checkLobbyStatus, 3000);
+            }
+        }
+    } catch (e) {
+        // problema di rete: si riprova al prossimo giro senza cambiare schermata
+    }
+}
 
 function getGuestId() {
     let id = localStorage.getItem('guest_id');
@@ -91,6 +123,9 @@ function hideDuelScreen() {
 function handleMessage(msg) {
     if (msg.type === 'ping') {
         // keepalive, nessuna azione necessaria
+    } else if (msg.type === 'lobby_locked') {
+        gameScreen.style.display = 'none';
+        checkLobbyStatus();
     } else if (msg.type === 'welcome') {
         localStorage.setItem('guest_name', msg.payload.name);
     } else if (msg.type === 'wait_boss') {
@@ -355,3 +390,5 @@ const savedName = localStorage.getItem('guest_name');
 if (savedName) {
     nameInput.value = savedName;
 }
+
+checkLobbyStatus();

@@ -15,6 +15,8 @@ const phaseBadge = document.getElementById('phaseBadge');
 const roundBadge = document.getElementById('roundBadge');
 const onlineBadge = document.getElementById('onlineBadge');
 const answersBadge = document.getElementById('answersBadge');
+const lobbyGateBadge = document.getElementById('lobbyGateBadge');
+const startGameBtn = document.getElementById('startGameBtn');
 const winnerLine = document.getElementById('winnerLine');
 const leaderboard = document.getElementById('leaderboard');
 
@@ -117,6 +119,9 @@ function handleMessage(msg) {
         roundBadge.textContent = `round ${s.round}/${s.total_rounds}`;
         onlineBadge.textContent = `${s.guests_online} online`;
         answersBadge.textContent = `${s.answers_count} risposte`;
+        lobbyGateBadge.textContent = s.started ? '🔓 ingresso invitati: aperto' : '🔒 ingresso invitati: chiuso';
+        startGameBtn.disabled = s.started;
+        startGameBtn.textContent = s.started ? '✅ Partita avviata' : '🚀 Avvia partita (abilita ingresso invitati)';
         winnerLine.textContent = s.winner ? `Ultimo vincitore: ${s.winner}` : '';
         penanceBadge.textContent = `penitenze: ${s.penance_used}/${s.penance_limit} (rimaste: ${s.penance_remaining})`;
         if (document.activeElement !== penanceLimitInput) {
@@ -290,6 +295,7 @@ function handleMessage(msg) {
     }
 }
 
+startGameBtn.onclick = () => ws.send(JSON.stringify({ type: 'start_game' }));
 document.getElementById('startBtn').onclick = () => ws.send(JSON.stringify({ type: 'start_round' }));
 document.getElementById('startDuelBtn').onclick = () => ws.send(JSON.stringify({ type: 'start_duel' }));
 document.getElementById('cancelDuelBtn').onclick = () => ws.send(JSON.stringify({ type: 'cancel_duel' }));

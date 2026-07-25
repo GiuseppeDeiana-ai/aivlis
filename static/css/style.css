@@ -1,3 +1,11 @@
+@font-face {
+    font-family: 'GameOfThrones';
+    src: url('/static/fonts/GameOfThrones.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -20,7 +28,12 @@ body {
     100% { background-position: 50% 45%; }
 }
 
-h1, h2, h3 { text-align: center; margin: 8px 0; }
+h1, h2, h3 {
+    text-align: center;
+    margin: 8px 0;
+    font-family: 'GameOfThrones', 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: 0.5px;
+}
 
 h1 {
     background: linear-gradient(90deg, #f9d423, #ff4e50, #9d4edd, #f9d423);
@@ -123,10 +136,11 @@ body.screen-shake { animation: bgDrift 20s ease-in-out infinite alternate, bodyS
 
 .boss-name-tag {
     margin-top: 8px;
+    font-family: 'GameOfThrones', 'Segoe UI', system-ui, sans-serif;
     font-weight: 800;
     letter-spacing: 0.5px;
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     text-align: center;
 }
 
@@ -734,4 +748,117 @@ input[type="text"] {
 @keyframes popIn {
     0% { opacity: 0; transform: scale(0.6); }
     100% { opacity: 1; transform: scale(1); }
+}
+
+/* ---- Schermata di benvenuto spettacolare ---- */
+
+.welcome-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 15%, #3a1c71 0%, #1a0933 55%, #05030a 100%);
+}
+
+.welcome-screen.dismissing {
+    animation: welcomeFadeOut 0.6s ease forwards;
+}
+
+@keyframes welcomeFadeOut {
+    to { opacity: 0; visibility: hidden; }
+}
+
+.welcome-ambient {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.welcome-ambient span {
+    position: absolute;
+    bottom: -10%;
+    opacity: 0;
+    animation-name: welcomeEmberRise;
+    animation-timing-function: ease-in;
+    animation-iteration-count: infinite;
+}
+
+@keyframes welcomeEmberRise {
+    0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+    12% { opacity: 1; }
+    100% { transform: translateY(-115vh) translateX(var(--drift, 20px)) rotate(360deg); opacity: 0; }
+}
+
+.welcome-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 24px;
+    max-width: 480px;
+}
+
+.welcome-portrait-wrap {
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #f9d423;
+    box-shadow: 0 0 40px 10px rgba(249, 212, 35, 0.55), 0 0 80px 20px rgba(255, 78, 80, 0.3);
+    animation: welcomePortraitPulse 2.4s ease-in-out infinite;
+}
+
+.welcome-portrait {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.welcome-portrait.loaded { opacity: 1; }
+
+@keyframes welcomePortraitPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.welcome-title {
+    font-size: 1.9rem;
+    line-height: 1.3;
+    margin: 0 0 12px;
+    background: linear-gradient(90deg, #f9d423, #ff4e50, #9d4edd, #00c9a7, #f9d423);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: welcomeTitleShine 4s linear infinite;
+    text-shadow: 0 0 24px rgba(249, 212, 35, 0.35);
+}
+
+@keyframes welcomeTitleShine {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+}
+
+.welcome-subtitle {
+    color: #f1e9ff;
+    font-size: 1.05rem;
+    margin: 0 0 24px;
+    opacity: 0.92;
+}
+
+.welcome-enter-btn {
+    font-size: 1.15rem;
+    padding: 16px 30px;
+    animation: welcomeBtnPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes welcomeBtnPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 78, 80, 0.5); }
+    50% { transform: scale(1.04); box-shadow: 0 0 0 14px rgba(255, 78, 80, 0); }
 }

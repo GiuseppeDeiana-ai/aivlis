@@ -8,7 +8,7 @@ from pathlib import Path
 
 import qrcode
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -233,6 +233,11 @@ def regia_page(request: Request):
     return templates.TemplateResponse("regia.html", {"request": request})
 
 
+@app.get("/api/status")
+def api_status():
+    return JSONResponse({"started": game.game_started})
+
+
 @app.get("/qr.png")
 def qr_png(request: Request):
     url = PUBLIC_URL or str(request.base_url)
@@ -246,6 +251,10 @@ def qr_png(request: Request):
 @app.websocket("/ws/guest")
 async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
     await websocket.accept()
+    if not game.game_started:
+        await hub._send(websocket, {"type": "lobby_locked", "payload": {}})
+        await websocket.close(code=4403)
+        return
     guest_id = id or secrets.token_hex(8)
     guest_name = name.strip()[:24] or f"Ospite-{guest_id[:4]}"
     game.add_guest(guest_id, guest_name)
@@ -341,7 +350,13 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
         while True:
             data = await websocket.receive_json()
             t = data.get("type")
-            if t == "start_round":
+            if t == "start_game":
+                if game.start_game():
+                    await log("🎉 Partita avviata dalla regia! Gli invitati possono entrare.")
+                    await broadcast_state()
+                else:
+                    await log("ℹ️ La partita e' già stata avviata.")
+            elif t == "start_round":
                 if game.start_round():
                     q = game.current_question
                     await hub.to_boss({

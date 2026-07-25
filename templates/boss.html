@@ -7,6 +7,18 @@
 <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version }}">
 </head>
 <body>
+<div id="welcomeScreen" class="welcome-screen">
+    <div class="welcome-ambient" id="welcomeAmbient"></div>
+    <div class="welcome-content">
+        <div class="welcome-portrait-wrap">
+            <img id="welcomePortraitImg" class="welcome-portrait" alt="La Laureata">
+        </div>
+        <h1 class="welcome-title">🎓 Festa di Laurea<br>di Silvia 🎓</h1>
+        <p class="welcome-subtitle">Oggi sei tu il Boss Finale della festa... pronta a combattere?</p>
+        <button class="primary welcome-enter-btn" id="welcomeEnterBtn">🎉 Entra!</button>
+    </div>
+</div>
+
 <h1>Sei il Boss Finale!</h1>
 
 <div class="boss-portrait-wrap">
@@ -83,6 +95,7 @@
 <script src="/static/js/gallery.js?v={{ asset_version }}"></script>
 <script src="/static/js/fx.js?v={{ asset_version }}"></script>
 <script src="/static/js/poster-reveal.js?v={{ asset_version }}"></script>
+<script src="/static/js/welcome.js?v={{ asset_version }}"></script>
 <script src="/static/js/boss.js?v={{ asset_version }}"></script>
 </body>
 </html>

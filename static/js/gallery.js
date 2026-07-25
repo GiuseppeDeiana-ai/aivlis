@@ -11,6 +11,12 @@ const BOSS_GALLERY = [
     "/resources/silvia_pirata2.png",
     "/resources/silvia_drago4.png",
     "/resources/silvia_interstellar3.png",
+    "/resources/" + encodeURIComponent("silvia signore degli anelli contenta.png"),
+    "/resources/" + encodeURIComponent("silvia signore degli anelli seria.png"),
+    "/resources/" + encodeURIComponent("silvia signore degli anelli che piange.png"),
+    "/resources/" + encodeURIComponent("silvia signore degli anelli sconvolta.png"),
+    "/resources/" + encodeURIComponent("silvia the walking dead contenta.png"),
+    "/resources/" + encodeURIComponent("silvia the walking dead smorfia.png"),
 ];
 
 function startPortraitRotation(imgEl, intervalMs = 6000) {

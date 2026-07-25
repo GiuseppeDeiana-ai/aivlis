@@ -15,6 +15,13 @@ const bossPortraitImg = document.getElementById('bossPortraitImg');
 
 startPortraitRotation(bossPortraitImg);
 
+initWelcomeScreen({
+    welcomeEl: document.getElementById('welcomeScreen'),
+    enterBtnEl: document.getElementById('welcomeEnterBtn'),
+    ambientEl: document.getElementById('welcomeAmbient'),
+    portraitImgEl: document.getElementById('welcomePortraitImg'),
+});
+
 const duelScreen = document.getElementById('duelScreen');
 const duelChallengerLine = document.getElementById('duelChallengerLine');
 const wheelCard = document.getElementById('wheelCard');

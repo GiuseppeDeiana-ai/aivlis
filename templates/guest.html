@@ -7,6 +7,18 @@
 <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version }}">
 </head>
 <body>
+<div id="welcomeScreen" class="welcome-screen">
+    <div class="welcome-ambient" id="welcomeAmbient"></div>
+    <div class="welcome-content">
+        <div class="welcome-portrait-wrap">
+            <img id="welcomePortraitImg" class="welcome-portrait" alt="La Laureata">
+        </div>
+        <h1 class="welcome-title">🎓 Festa di Laurea<br>di Silvia 🎓</h1>
+        <p class="welcome-subtitle">Preparati alla battaglia... solo il più veloce sopravviverà alla Laureata!</p>
+        <button class="primary welcome-enter-btn" id="welcomeEnterBtn">🎉 Entra nella festa!</button>
+    </div>
+</div>
+
 <h1>Sfida la Laureata</h1>
 
 <div class="boss-portrait-wrap">
@@ -19,7 +31,12 @@
 <div class="hp-bar-wrap" id="hpBarWrap"><div class="hp-bar" id="hpBar" style="width:100%"></div></div>
 <div class="hp-label" id="hpLabel">HP 100/100</div>
 
-<div id="joinScreen" class="card center">
+<div id="lockScreen" class="card center" style="display:none;">
+    <h3>😏 Furbacchioni, tornate al momento giusto!</h3>
+    <p>Il gioco non è ancora iniziato... aspetta che la regia dia il via!</p>
+</div>
+
+<div id="joinScreen" class="card center" style="display:none;">
     <h3>Come ti chiami?</h3>
     <input type="text" id="nameInput" placeholder="Il tuo nome" maxlength="24">
     <br>
@@ -87,6 +104,7 @@
 <script src="/static/js/fx.js?v={{ asset_version }}"></script>
 <script src="/static/js/leaderboard.js?v={{ asset_version }}"></script>
 <script src="/static/js/poster-reveal.js?v={{ asset_version }}"></script>
+<script src="/static/js/welcome.js?v={{ asset_version }}"></script>
 <script src="/static/js/guest.js?v={{ asset_version }}"></script>
 </body>
 </html>
