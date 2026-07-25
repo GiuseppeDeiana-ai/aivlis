@@ -412,7 +412,13 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                     else:
                         await hub.to_all({"type": "duel_answer_registered", "payload": {"by": "challenger"}})
                         await log(f"✍️ {guest_name} (sfidante) ha risposto, in attesa della festeggiata...")
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
+        # Starlette puo' segnare una connessione come "non piu' connessa" a causa di un invio
+        # fallito verso di lei da un broadcast concorrente (es. un altro evento di gioco che
+        # arriva nello stesso istante in cui il dispositivo si stacca): in quel caso receive_json()
+        # solleva un RuntimeError generico invece del normale WebSocketDisconnect - va trattato
+        # comunque come una disconnessione, altrimenti la pulizia sotto non scatterebbe mai e il
+        # dispositivo resterebbe segnato come "online" per errore.
         if guest_id in game.guests:
             game.guests[guest_id].connected = False
         hub.guests.pop(guest_id, None)
@@ -439,7 +445,7 @@ async def ws_spectate(websocket: WebSocket):
                 if emoji in REACTION_EMOJIS and now - last_reaction_at >= REACTION_COOLDOWN_SECONDS:
                     last_reaction_at = now
                     await hub.to_all({"type": "reaction", "payload": {"emoji": emoji}})
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):  # vedi commento in ws_guest
         hub.spectators.discard(websocket)
         await log(f"👀 Uno spettatore si e' disconnesso ({len(hub.spectators)} online)")
         await broadcast_state()
@@ -480,7 +486,7 @@ async def ws_boss(websocket: WebSocket, key: str = ""):
                     else:
                         await hub.to_all({"type": "duel_answer_registered", "payload": {"by": "boss"}})
                         await log("✍️ La festeggiata ha risposto, in attesa dello sfidante...")
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):  # vedi commento in ws_guest
         hub.boss.discard(websocket)
         await log("👑 La festeggiata si e' disconnessa")
 
@@ -605,5 +611,5 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 await hub.kick_all_except_regia()
                 await log("💥 Restart totale: tutti i collegamenti sono stati chiusi, si riparte da zero.")
                 await broadcast_state()
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):  # vedi commento in ws_guest
         hub.regia.discard(websocket)
