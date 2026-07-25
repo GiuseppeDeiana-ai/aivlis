@@ -1,28 +1,45 @@
-// Rivelazione progressiva della locandina: parte pixellata/sporca e si "pulisce"
-// molto lentamente fino a diventare nitida, per dare tempo a tutti di provare a indovinare.
+// Rivelazione progressiva della locandina: parte pixellata/sporca e si "pulisce" a scatti,
+// restando ferma su ogni livello di sgranatura per qualche secondo prima di passare al
+// successivo (non un'animazione continua) - identica per boss, invitati e regia.
 
-const POSTER_REVEAL_MS = 17000; // deve restare ben sotto DUEL_TIMEOUT_SECONDS (20s) lato server
-const POSTER_MIN_PIXELS = 6; // dimensione del mosaico all'inizio (molto blocchi grandi)
+const POSTER_LEVELS = [
+    { pixels: 6, hold: 2800 },
+    { pixels: 10, hold: 2500 },
+    { pixels: 16, hold: 2300 },
+    { pixels: 26, hold: 2100 },
+    { pixels: 42, hold: 2000 },
+    { pixels: 68, hold: 1900 },
+    { pixels: 110, hold: 1800 },
+    { pixels: 180, hold: 1800 },
+    // dopo l'ultimo livello resta a piena risoluzione fino alla fine dello scontro
+];
 
-// t in [0,1] -> quanto e' avanzata la rivelazione. Cresce lentamente all'inizio
-// e accelera verso la fine, cosi' la locandina resta poco chiara per la maggior
-// parte del tempo e si svela solo negli ultimi secondi.
-function _posterRevealEase(t) {
-    return Math.pow(t, 2.2);
-}
-
-function startPosterReveal(canvasEl, imageUrl, durationMs = POSTER_REVEAL_MS) {
+function startPosterReveal(canvasEl, imageUrl) {
     let cancelled = false;
     let finished = false;
     const img = new Image();
     const ctx = canvasEl.getContext('2d');
     const w = canvasEl.width;
     const h = canvasEl.height;
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    let timeoutId = null;
 
     function drawFull() {
         ctx.imageSmoothingEnabled = true;
         ctx.clearRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
+    }
+
+    function drawAtPixelSize(pixelW) {
+        const pixelH = Math.max(1, Math.round(pixelW * (h / w)));
+        tempCanvas.width = pixelW;
+        tempCanvas.height = pixelH;
+        tempCtx.drawImage(img, 0, 0, pixelW, pixelH);
+
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(tempCanvas, 0, 0, pixelW, pixelH, 0, 0, w, h);
     }
 
     img.onload = () => {
@@ -31,43 +48,35 @@ function startPosterReveal(canvasEl, imageUrl, durationMs = POSTER_REVEAL_MS) {
             drawFull();
             return;
         }
-        const maxPixels = w;
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        const startTime = performance.now();
+        let levelIndex = 0;
 
-        function frame() {
+        function showNextLevel() {
             if (cancelled) return;
             if (finished) {
                 drawFull();
                 return;
             }
-            const elapsed = performance.now() - startTime;
-            const t = Math.min(1, elapsed / durationMs);
-            const eased = _posterRevealEase(t);
-            const pixelW = Math.max(POSTER_MIN_PIXELS, Math.round(POSTER_MIN_PIXELS + eased * (maxPixels - POSTER_MIN_PIXELS)));
-            const pixelH = Math.max(1, Math.round(pixelW * (h / w)));
-
-            tempCanvas.width = pixelW;
-            tempCanvas.height = pixelH;
-            tempCtx.drawImage(img, 0, 0, pixelW, pixelH);
-
-            ctx.imageSmoothingEnabled = false;
-            ctx.clearRect(0, 0, w, h);
-            ctx.drawImage(tempCanvas, 0, 0, pixelW, pixelH, 0, 0, w, h);
-
-            if (t < 1) {
-                requestAnimationFrame(frame);
+            if (levelIndex >= POSTER_LEVELS.length) {
+                drawFull();
+                return;
             }
+            const level = POSTER_LEVELS[levelIndex];
+            drawAtPixelSize(level.pixels);
+            levelIndex += 1;
+            timeoutId = setTimeout(showNextLevel, level.hold);
         }
-        requestAnimationFrame(frame);
+        showNextLevel();
     };
     img.src = imageUrl;
 
     return {
-        cancel: () => { cancelled = true; },
+        cancel: () => {
+            cancelled = true;
+            if (timeoutId) clearTimeout(timeoutId);
+        },
         finish: () => {
             finished = true;
+            if (timeoutId) clearTimeout(timeoutId);
             if (img.complete && img.naturalWidth > 0) drawFull();
         },
     };
