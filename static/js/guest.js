@@ -43,6 +43,7 @@ const PING_INTERVAL_MS = 20000; // deve corrispondere a PING_INTERVAL_SECONDS in
 
 let ws = null;
 let pingInterval = null;
+let posterReveal = null;
 let hasAnsweredThisRound = false;
 let hasAnsweredDuel = false;
 let gameOverShown = false;
@@ -151,6 +152,7 @@ function handleMessage(msg) {
         }
     } else if (msg.type === 'duel_result') {
         stopCountdownBar(duelTimerBar);
+        if (posterReveal) posterReveal.finish();
         showDuelResult(msg.payload);
         if (msg.payload.outcome === 'challenger') {
             pulseShake(bossPortrait);
@@ -170,6 +172,7 @@ function handleMessage(msg) {
         pulseHpFlash(hpBar, hpBarWrap, 'damage');
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
+        if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         statusLine.textContent = 'Scontro diretto annullato dalla regia.';
     } else if (msg.type === 'return_home') {
         hideDuelScreen();
@@ -200,6 +203,7 @@ function handleMessage(msg) {
         hideDuelScreen();
         penanceScreen.style.display = 'none';
         stopCountdownBar(duelTimerBar);
+        if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         gameOverShown = false;
         statusLine.textContent = 'Il gioco e stato resettato. In attesa della prossima domanda...';
     }
@@ -248,9 +252,21 @@ function showDuelChallenge(payload) {
     duelCategoryTitle.textContent = `Indovina la ${categoryLabel(payload.category).toLowerCase()}`;
     fxThemeParticles(payload.category);
     startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
+    if (posterReveal) {
+        posterReveal.cancel();
+        posterReveal = null;
+    }
     duelMedia.innerHTML = '';
     if (payload.category === 'musica') {
         duelMedia.innerHTML = '<div class="status">🎵 Ascolta dalle casse della regia...</div>';
+    } else if (payload.category === 'film' && payload.media) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 300;
+        canvas.height = 450;
+        canvas.className = 'poster-reveal';
+        duelMedia.appendChild(canvas);
+        const imgUrl = `/static/media/film/${encodeURIComponent(payload.media)}`;
+        posterReveal = startPosterReveal(canvas, imgUrl);
     } else if (payload.media) {
         const img = document.createElement('img');
         img.src = `/static/media/${payload.category}/${encodeURIComponent(payload.media)}`;

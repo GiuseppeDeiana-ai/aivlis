@@ -421,6 +421,18 @@ input[type="text"] {
 }
 
 #duelMedia img { max-width: 100%; border-radius: 10px; display: block; margin: 0 auto 10px; }
+
+#duelMedia canvas.poster-reveal {
+    display: block;
+    margin: 0 auto 10px;
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    border-radius: 10px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
 #duelMedia audio { width: 100%; margin: 10px 0; }
 
 .log-panel {

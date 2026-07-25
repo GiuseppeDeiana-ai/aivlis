@@ -57,6 +57,7 @@ let ws = null;
 let pingInterval = null;
 let gameOverShown = false;
 let currentMusicAudio = null;
+let posterReveal = null;
 
 function addLogEntry(ts, text) {
     const time = new Date(ts * 1000).toLocaleTimeString('it-IT');
@@ -179,6 +180,10 @@ function handleMessage(msg) {
             currentMusicAudio.pause();
             currentMusicAudio = null;
         }
+        if (posterReveal) {
+            posterReveal.cancel();
+            posterReveal = null;
+        }
         duelMedia.innerHTML = '';
         if (msg.payload.category === 'musica' && msg.payload.media) {
             const audio = document.createElement('audio');
@@ -200,6 +205,14 @@ function handleMessage(msg) {
                 stopMusicBtn.textContent = '⏹️ Canzone interrotta';
             };
             duelMedia.appendChild(stopMusicBtn);
+        } else if (msg.payload.category === 'film' && msg.payload.media) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300;
+            canvas.height = 450;
+            canvas.className = 'poster-reveal';
+            duelMedia.appendChild(canvas);
+            const imgUrl = `/static/media/film/${encodeURIComponent(msg.payload.media)}`;
+            posterReveal = startPosterReveal(canvas, imgUrl);
         } else if (msg.payload.media) {
             const img = document.createElement('img');
             img.src = `/static/media/${msg.payload.category}/${encodeURIComponent(msg.payload.media)}`;
@@ -229,6 +242,7 @@ function handleMessage(msg) {
             : 'Lo sfidante ha risposto!';
     } else if (msg.type === 'duel_result') {
         stopCountdownBar(duelTimerBar);
+        if (posterReveal) posterReveal.finish();
         duelResultCard.style.display = 'block';
         Array.from(duelOptionsBox.children).forEach((b, idx) => {
             if (idx === msg.payload.correct_option) b.style.outline = '3px solid #00e676';
@@ -264,6 +278,7 @@ function handleMessage(msg) {
         hideDuelScreen();
         duelSendPopup.style.display = 'none';
         if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
+        if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
     } else if (msg.type === 'reset') {
         hideDuelScreen();
         penanceScreen.style.display = 'none';
@@ -271,6 +286,7 @@ function handleMessage(msg) {
         stopCountdownBar(duelTimerBar);
         gameOverShown = false;
         if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
+        if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
     }
 }
 

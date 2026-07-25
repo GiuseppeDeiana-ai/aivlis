@@ -70,9 +70,81 @@
   "film": [
     {
       "id": "film_1",
-      "media": "placeholder_1.jpg",
-      "options": ["Titolo A", "Titolo B", "Titolo C", "Titolo D"],
+      "media": "avengers infinity war.jpg",
+      "options": ["Avengers: Infinity War", "Captain America: Civil War", "Avengers: Endgame", "Avengers: Age of Ultron"],
       "answer": 0
+    },
+    {
+      "id": "film_2",
+      "media": "good fellas.jpg",
+      "options": ["Il Padrino", "Casino", "Quei Bravi Ragazzi", "The Irishman"],
+      "answer": 2
+    },
+    {
+      "id": "film_3",
+      "media": "harry potter e la pietra filosofale.jpg",
+      "options": ["Harry Potter e la Pietra Filosofale", "Harry Potter e la Camera dei Segreti", "Harry Potter e il Prigioniero di Azkaban", "Harry Potter e il Calice di Fuoco"],
+      "answer": 0
+    },
+    {
+      "id": "film_4",
+      "media": "il cavaliere oscuro.jpg",
+      "options": ["Batman Begins", "Il Cavaliere Oscuro - Il Ritorno", "Il Cavaliere Oscuro", "Joker"],
+      "answer": 2
+    },
+    {
+      "id": "film_5",
+      "media": "il gladiatore.jpg",
+      "options": ["Troy", "Il Gladiatore", "300", "Alexander"],
+      "answer": 1
+    },
+    {
+      "id": "film_6",
+      "media": "il padrino.jpg",
+      "options": ["Il Padrino", "Quei Bravi Ragazzi", "Scarface", "Il Padrino - Parte II"],
+      "answer": 0
+    },
+    {
+      "id": "film_7",
+      "media": "interstellar.jpg",
+      "options": ["Inception", "Tenet", "Dunkirk", "Interstellar"],
+      "answer": 3
+    },
+    {
+      "id": "film_8",
+      "media": "killbill.jpg",
+      "options": ["Pulp Fiction", "Kill Bill", "Bastardi Senza Gloria", "Death Proof"],
+      "answer": 1
+    },
+    {
+      "id": "film_9",
+      "media": "pirati dei caraibi ai confini del mare.jpg",
+      "options": ["La Maledizione della Prima Luna", "Ai Confini del Mondo", "Pirati dei Caraibi: Oltre i Confini del Mare", "La Vendetta di Salazar"],
+      "answer": 2
+    },
+    {
+      "id": "film_10",
+      "media": "pulp fiction.jpg",
+      "options": ["Le Iene", "Jackie Brown", "Pulp Fiction", "Kill Bill"],
+      "answer": 2
+    },
+    {
+      "id": "film_11",
+      "media": "ritorno al futuro.jpg",
+      "options": ["Ritorno al Futuro - Parte II", "Ritorno al Futuro", "Ritorno al Futuro - Parte III", "Forrest Gump"],
+      "answer": 1
+    },
+    {
+      "id": "film_12",
+      "media": "shining.jpg",
+      "options": ["It", "Il Miglio Verde", "Shining", "Misery non Deve Morire"],
+      "answer": 2
+    },
+    {
+      "id": "film_13",
+      "media": "transformers the last knight.jpg",
+      "options": ["Transformers - La Vendetta del Caduto", "Transformers 4 - L'Era dell'Estinzione", "Transformers 3", "Transformers: The Last Knight"],
+      "answer": 3
     }
   ],
   "videogioco": [
@@ -86,16 +158,86 @@
   "data": [
     {
       "id": "data_1",
-      "kind": "image_to_date",
-      "media": "placeholder_1.jpg",
-      "options": ["1989", "1969", "2001", "2010"],
+      "kind": "date_to_event",
+      "prompt": "1969",
+      "options": ["Caduta del Muro di Berlino", "Sbarco sulla Luna", "Attacco alle Torri Gemelle", "Fine della Guerra Fredda"],
       "answer": 1
     },
     {
       "id": "data_2",
-      "kind": "text_to_event",
-      "prompt": "1969",
-      "options": ["Caduta del Muro di Berlino", "Sbarco sulla Luna", "Attacco alle Torri Gemelle", "Fine della Guerra Fredda"],
+      "kind": "event_to_date",
+      "prompt": "Caduta del Muro di Berlino",
+      "options": ["1985", "1989", "1991", "1993"],
+      "answer": 1
+    },
+    {
+      "id": "data_3",
+      "kind": "date_to_event",
+      "prompt": "1492",
+      "options": ["Scoperta dell'America", "Scoperta dell'Australia", "Fondazione di Roma", "Rivoluzione Francese"],
+      "answer": 0
+    },
+    {
+      "id": "data_4",
+      "kind": "event_to_date",
+      "prompt": "Rivoluzione Francese (presa della Bastiglia)",
+      "options": ["1776", "1789", "1804", "1815"],
+      "answer": 1
+    },
+    {
+      "id": "data_5",
+      "kind": "date_to_event",
+      "prompt": "1945",
+      "options": ["Fine della Seconda Guerra Mondiale", "Fine della Prima Guerra Mondiale", "Sbarco in Normandia", "Unita' d'Italia"],
+      "answer": 0
+    },
+    {
+      "id": "data_6",
+      "kind": "event_to_date",
+      "prompt": "Sbarco in Normandia (D-Day)",
+      "options": ["1942", "1943", "1944", "1945"],
+      "answer": 2
+    },
+    {
+      "id": "data_7",
+      "kind": "date_to_event",
+      "prompt": "1861",
+      "options": ["Unita' d'Italia", "Fine dell'Impero Romano", "Scoperta dell'America", "Rivoluzione Industriale"],
+      "answer": 0
+    },
+    {
+      "id": "data_8",
+      "kind": "event_to_date",
+      "prompt": "Attacco alle Torri Gemelle (11 settembre)",
+      "options": ["1999", "2001", "2003", "2005"],
+      "answer": 1
+    },
+    {
+      "id": "data_9",
+      "kind": "date_to_event",
+      "prompt": "1963",
+      "options": ["Assassinio di Kennedy", "Sbarco sulla Luna", "Caduta del Muro di Berlino", "Fine della Guerra del Vietnam"],
+      "answer": 0
+    },
+    {
+      "id": "data_10",
+      "kind": "event_to_date",
+      "prompt": "Primi Giochi Olimpici moderni (Atene)",
+      "options": ["1892", "1896", "1900", "1904"],
+      "answer": 1
+    },
+    {
+      "id": "data_11",
+      "kind": "date_to_event",
+      "prompt": "2004",
+      "options": ["Nascita di Facebook", "Nascita di Instagram", "Nascita di YouTube", "Nascita di Twitter"],
+      "answer": 0
+    },
+    {
+      "id": "data_12",
+      "kind": "event_to_date",
+      "prompt": "Nascita di Instagram",
+      "options": ["2008", "2010", "2012", "2014"],
       "answer": 1
     }
   ]

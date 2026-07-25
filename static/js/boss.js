@@ -44,6 +44,7 @@ const PING_INTERVAL_MS = 20000; // deve corrispondere a PING_INTERVAL_SECONDS in
 
 let ws = null;
 let pingInterval = null;
+let posterReveal = null;
 let hasAnswered = false;
 let hasAnsweredDuel = false;
 let penanceSpinning = false;
@@ -131,9 +132,21 @@ function handleMessage(msg) {
         duelCategoryTitle.textContent = `Indovina la ${categoryLabel(msg.payload.category).toLowerCase()}`;
         fxThemeParticles(msg.payload.category);
         startCountdownBar(duelTimerBar, DUEL_TIMEOUT_SECONDS_JS);
+        if (posterReveal) {
+            posterReveal.cancel();
+            posterReveal = null;
+        }
         duelMedia.innerHTML = '';
         if (msg.payload.category === 'musica') {
             duelMedia.innerHTML = '<div class="status">🎵 Ascolta dalle casse della regia...</div>';
+        } else if (msg.payload.category === 'film' && msg.payload.media) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300;
+            canvas.height = 450;
+            canvas.className = 'poster-reveal';
+            duelMedia.appendChild(canvas);
+            const imgUrl = `/static/media/film/${encodeURIComponent(msg.payload.media)}`;
+            posterReveal = startPosterReveal(canvas, imgUrl);
         } else if (msg.payload.media) {
             const img = document.createElement('img');
             img.src = `/static/media/${msg.payload.category}/${encodeURIComponent(msg.payload.media)}`;
@@ -163,6 +176,7 @@ function handleMessage(msg) {
         }
     } else if (msg.type === 'duel_result') {
         stopCountdownBar(duelTimerBar);
+        if (posterReveal) posterReveal.finish();
         duelResultCard.style.display = 'block';
         Array.from(duelOptionsBox.children).forEach((b, idx) => {
             b.disabled = true;
@@ -195,6 +209,7 @@ function handleMessage(msg) {
     } else if (msg.type === 'duel_cancelled') {
         hideDuelScreen();
         penanceCard.style.display = 'block';
+        if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         statusLine.textContent = 'Scontro diretto annullato dalla regia.';
     } else if (msg.type === 'return_home') {
         hideDuelScreen();
@@ -259,6 +274,7 @@ function handleMessage(msg) {
         penanceRevealCard.style.display = 'none';
         penanceWheelWrap.style.display = 'none';
         stopCountdownBar(duelTimerBar);
+        if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         gameOverShown = false;
         statusLine.textContent = 'Il gioco e stato resettato.';
     }
