@@ -121,12 +121,22 @@
         <h3>Classifica</h3>
         <div class="leaderboard-list" id="leaderboard"></div>
     </div>
+
+    <div class="card">
+        <h3 class="center">💬 Chat della festa</h3>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-row">
+            <input type="text" id="chatInput" placeholder="Scrivi un commento..." maxlength="140">
+            <button class="primary" id="chatSendBtn">Invia</button>
+        </div>
+    </div>
 </div>
 
 <script src="/static/js/wheel.js?v={{ asset_version }}"></script>
 <script src="/static/js/gallery.js?v={{ asset_version }}"></script>
 <script src="/static/js/fx.js?v={{ asset_version }}"></script>
 <script src="/static/js/leaderboard.js?v={{ asset_version }}"></script>
+<script src="/static/js/chat.js?v={{ asset_version }}"></script>
 <script src="/static/js/poster-reveal.js?v={{ asset_version }}"></script>
 <script src="/static/js/welcome.js?v={{ asset_version }}"></script>
 <script src="/static/js/guest.js?v={{ asset_version }}"></script>

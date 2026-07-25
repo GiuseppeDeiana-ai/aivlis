@@ -13,6 +13,9 @@ BOSS_ID = "boss"
 PENANCE_HEAL = 10
 DEFAULT_PENANCE_LIMIT = 3
 MAX_AVATAR_LENGTH = 400_000  # ~300KB decoded: sufficiente per una foto 200x200 compressa
+MAX_CHAT_LENGTH = 140
+CHAT_COOLDOWN_SECONDS = 2.0
+MAX_CHAT_HISTORY = 30
 
 
 class Phase(str, Enum):
@@ -39,6 +42,7 @@ class Guest:
     avatar: Optional[str] = None
     last_answered_round: int = -1
     answer_streak: int = 0
+    last_chat_at: Optional[float] = None
 
 
 class GameState:
@@ -56,6 +60,7 @@ class GameState:
         self.guests: dict[str, Guest] = {}
         self.max_hp = max_hp
         self.hp = max_hp
+        self.chat_messages: list[dict] = []
 
         self.used_challenge_ids: set[str] = set()
         self.challenger_id: Optional[str] = None
@@ -132,6 +137,32 @@ class GameState:
                         guest.fastest_correct_seconds = elapsed
         return is_correct
 
+    def add_chat_message(self, guest_id: str, text: str) -> Optional[dict]:
+        if guest_id not in self.guests:
+            return None
+        text = text.strip()[:MAX_CHAT_LENGTH]
+        if not text:
+            return None
+        guest = self.guests[guest_id]
+        now = time.time()
+        if guest.last_chat_at is not None and now - guest.last_chat_at < CHAT_COOLDOWN_SECONDS:
+            return None
+        guest.last_chat_at = now
+        message = {
+            "id": guest_id,
+            "name": guest.name,
+            "avatar": guest.avatar,
+            "text": text,
+            "ts": now,
+        }
+        self.chat_messages.append(message)
+        if len(self.chat_messages) > MAX_CHAT_HISTORY:
+            self.chat_messages = self.chat_messages[-MAX_CHAT_HISTORY:]
+        return message
+
+    def clear_chat(self):
+        self.chat_messages = []
+
     def set_avatar(self, guest_id: str, avatar_data_url: str) -> bool:
         if guest_id not in self.guests:
             return False
@@ -198,6 +229,14 @@ class GameState:
         self.penance_used = 0
         self.used_penance_indices = set()
         self.pending_penance_heal = None
+        self.chat_messages = []
+
+    def hard_reset(self):
+        """Restart totale: come reset(), ma azzera anche tutti gli invitati registrati
+        (nomi, punteggi, avatar, streak) - usato per buttare fuori chi si e' collegato
+        per una falsa partenza prima dell'inizio vero della festa."""
+        self.reset()
+        self.guests = {}
 
     # ---- duel (scontro diretto) ----
 

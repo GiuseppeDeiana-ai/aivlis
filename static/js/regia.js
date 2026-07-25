@@ -21,6 +21,8 @@ const startGameBtn = document.getElementById('startGameBtn');
 const winnerLine = document.getElementById('winnerLine');
 const leaderboard = document.getElementById('leaderboard');
 const answerTicker = document.getElementById('answerTicker');
+const chatMessages = document.getElementById('chatMessages');
+const clearChatBtn = document.getElementById('clearChatBtn');
 
 const duelScreen = document.getElementById('duelScreen');
 const duelChallengerLine = document.getElementById('duelChallengerLine');
@@ -111,6 +113,12 @@ function handleMessage(msg) {
         // keepalive, nessuna azione necessaria
     } else if (msg.type === 'log') {
         addLogEntry(msg.payload.ts, msg.payload.text);
+    } else if (msg.type === 'chat_history') {
+        renderChatHistory(chatMessages, msg.payload.messages);
+    } else if (msg.type === 'chat_message') {
+        renderChatMessage(chatMessages, msg.payload);
+    } else if (msg.type === 'chat_cleared') {
+        clearChatDisplay(chatMessages);
     } else if (msg.type === 'answer_progress') {
         if (answerTicker) {
             const chip = document.createElement('span');
@@ -357,6 +365,7 @@ function handleMessage(msg) {
         sfxStopHeartbeat();
         document.body.classList.remove('enrage-mode');
         if (answerTicker) answerTicker.innerHTML = '';
+        clearChatDisplay(chatMessages);
         if (currentMusicAudio) { currentMusicAudio.pause(); currentMusicAudio = null; }
         if (posterReveal) { posterReveal.cancel(); posterReveal = null; }
         const finaleEl = document.getElementById('fxFinaleOverlay');
@@ -392,6 +401,18 @@ setPenanceLimitBtn.onclick = () => {
 document.getElementById('resetBtn').onclick = () => {
     if (confirm('Sicuro di voler resettare la partita?')) {
         ws.send(JSON.stringify({ type: 'reset' }));
+    }
+};
+
+document.getElementById('hardRestartBtn').onclick = () => {
+    if (confirm('Questo disconnette TUTTI (invitati, festeggiata, spettatori) e azzera nomi e punteggi. Sicura?')) {
+        ws.send(JSON.stringify({ type: 'hard_restart' }));
+    }
+};
+
+clearChatBtn.onclick = () => {
+    if (confirm('Svuotare la chat per tutti?')) {
+        ws.send(JSON.stringify({ type: 'clear_chat' }));
     }
 };
 

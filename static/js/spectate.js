@@ -14,6 +14,7 @@ const hpLabel = document.getElementById('hpLabel');
 const roundLine = document.getElementById('roundLine');
 const answerTicker = document.getElementById('answerTicker');
 const leaderboard = document.getElementById('leaderboard');
+const chatMessages = document.getElementById('chatMessages');
 const bossPortrait = document.getElementById('bossPortrait');
 const bossPortraitImg = document.getElementById('bossPortraitImg');
 
@@ -93,6 +94,10 @@ function hideDuelScreen() {
 function handleMessage(msg) {
     if (msg.type === 'ping') {
         // keepalive, nessuna azione necessaria
+    } else if (msg.type === 'chat_history') {
+        renderChatHistory(chatMessages, msg.payload.messages);
+    } else if (msg.type === 'chat_message') {
+        renderChatMessage(chatMessages, msg.payload);
     } else if (msg.type === 'wait_boss') {
         questionCard.style.display = 'none';
         winnerBanner.style.display = 'none';
@@ -232,6 +237,7 @@ function handleMessage(msg) {
         gameOverShown = false;
         halfHpAnnounced = false;
         document.body.classList.remove('enrage-mode');
+        clearChatDisplay(chatMessages);
         const finaleEl = document.getElementById('fxFinaleOverlay');
         if (finaleEl) finaleEl.remove();
         const leaderboardEl = document.getElementById('fxLeaderboardOverlay');

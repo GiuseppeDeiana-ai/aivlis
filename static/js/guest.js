@@ -16,6 +16,9 @@ const avatarConfirmBtn = document.getElementById('avatarConfirmBtn');
 const avatarSkipBtn = document.getElementById('avatarSkipBtn');
 const avatarStatusLine = document.getElementById('avatarStatusLine');
 const duelVsBanner = document.getElementById('duelVsBanner');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const chatSendBtn = document.getElementById('chatSendBtn');
 const statusLine = document.getElementById('statusLine');
 const lobbyCard = document.getElementById('lobbyCard');
 const questionCard = document.getElementById('questionCard');
@@ -222,6 +225,10 @@ function handleMessage(msg) {
         checkLobbyStatus();
     } else if (msg.type === 'welcome') {
         localStorage.setItem('guest_name', msg.payload.name);
+    } else if (msg.type === 'chat_history') {
+        renderChatHistory(chatMessages, msg.payload.messages, getGuestId());
+    } else if (msg.type === 'chat_message') {
+        renderChatMessage(chatMessages, msg.payload, getGuestId());
     } else if (msg.type === 'wait_boss') {
         hasAnsweredThisRound = false;
         questionCard.style.display = 'none';
@@ -357,6 +364,7 @@ function handleMessage(msg) {
         gameOverShown = false;
         halfHpAnnounced = false;
         document.body.classList.remove('enrage-mode');
+        clearChatDisplay(chatMessages);
         const finaleEl = document.getElementById('fxFinaleOverlay');
         if (finaleEl) finaleEl.remove();
         const leaderboardEl = document.getElementById('fxLeaderboardOverlay');
@@ -527,5 +535,19 @@ const savedName = localStorage.getItem('guest_name');
 if (savedName) {
     nameInput.value = savedName;
 }
+
+function sendChatMessage() {
+    const text = chatInput.value.trim();
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: 'chat_message', text }));
+    chatInput.value = '';
+    chatSendBtn.disabled = true;
+    setTimeout(() => { chatSendBtn.disabled = false; }, 2000);
+}
+
+chatSendBtn.onclick = sendChatMessage;
+chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendChatMessage();
+});
 
 checkLobbyStatus();

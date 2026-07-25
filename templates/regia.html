@@ -103,6 +103,10 @@
         <div class="row">
             <button class="primary danger" id="resetBtn">Reset partita</button>
         </div>
+        <p class="status">Il tasto sotto disconnette TUTTI (invitati, festeggiata, spettatori) e azzera anche i loro nomi/punteggi: usalo per buttare fuori chi si è collegato per errore prima dell'inizio vero.</p>
+        <div class="row">
+            <button class="primary danger" id="hardRestartBtn">💥 Restart totale (disconnetti tutti)</button>
+        </div>
     </div>
 
     <div class="card center" id="penanceScreen" style="display:none;">
@@ -141,6 +145,14 @@
         <h3>Classifica</h3>
         <div class="leaderboard-list" id="leaderboard"></div>
     </div>
+
+    <div class="card">
+        <h3 class="center">💬 Chat della festa</h3>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="row">
+            <button class="primary danger" id="clearChatBtn">🧹 Svuota chat</button>
+        </div>
+    </div>
 </div>
 
 <div id="duelSendPopup" class="duel-send-popup" style="display:none;">
@@ -155,6 +167,7 @@
 <script src="/static/js/gallery.js?v={{ asset_version }}"></script>
 <script src="/static/js/fx.js?v={{ asset_version }}"></script>
 <script src="/static/js/leaderboard.js?v={{ asset_version }}"></script>
+<script src="/static/js/chat.js?v={{ asset_version }}"></script>
 <script src="/static/js/poster-reveal.js?v={{ asset_version }}"></script>
 <script src="/static/js/sfx.js?v={{ asset_version }}"></script>
 <script src="/static/js/regia.js?v={{ asset_version }}"></script>

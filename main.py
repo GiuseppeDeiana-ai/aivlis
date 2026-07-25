@@ -120,6 +120,23 @@ class Hub:
     async def to_all(self, data: dict):
         await asyncio.gather(self.to_regia(data), self.to_boss(data), self.to_guests(data), self.to_spectators(data))
 
+    async def to_audience(self, data: dict):
+        """Tutti tranne la festeggiata: usato per la chat, per non distrarla durante gli scontri."""
+        await asyncio.gather(self.to_regia(data), self.to_guests(data), self.to_spectators(data))
+
+    async def kick_all_except_regia(self):
+        """Restart totale: chiude forzatamente le connessioni di invitati, festeggiata e
+        spettatori (la regia che lancia il comando resta collegata)."""
+        conns = list(self.guests.values()) + list(self.boss) + list(self.spectators)
+        for ws in conns:
+            try:
+                await ws.close(code=4002)
+            except Exception:
+                pass
+        self.guests.clear()
+        self.boss.clear()
+        self.spectators.clear()
+
 
 hub = Hub()
 
@@ -320,13 +337,18 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
     game.add_guest(guest_id, guest_name)
     hub.guests[guest_id] = websocket
     await hub._send(websocket, {"type": "welcome", "payload": {"guest_id": guest_id, "name": guest_name}})
+    await hub._send(websocket, {"type": "chat_history", "payload": {"messages": game.chat_messages}})
     await log(f"👤 {guest_name} si e' connesso ({len(hub.guests)} online)")
     await broadcast_state()
     try:
         while True:
             data = await websocket.receive_json()
             t = data.get("type")
-            if t == "answer":
+            if t == "chat_message":
+                message = game.add_chat_message(guest_id, str(data.get("text", "")))
+                if message:
+                    await hub.to_audience({"type": "chat_message", "payload": message})
+            elif t == "answer":
                 choice = int(data["choice"])
                 result = game.submit_guest_answer(guest_id, choice)
                 if result is None:
@@ -375,6 +397,7 @@ async def ws_spectate(websocket: WebSocket):
     """Ruolo di sola visione: nessun nome, nessuna chiave, nessuna interazione di gioco."""
     await websocket.accept()
     hub.spectators.add(websocket)
+    await hub._send(websocket, {"type": "chat_history", "payload": {"messages": game.chat_messages}})
     await log(f"👀 Uno spettatore si e' collegato ({len(hub.spectators)} online)")
     await broadcast_state()
     try:
@@ -434,12 +457,17 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
         return
     await websocket.accept()
     hub.regia.add(websocket)
+    await hub._send(websocket, {"type": "chat_history", "payload": {"messages": game.chat_messages}})
     await broadcast_state()
     try:
         while True:
             data = await websocket.receive_json()
             t = data.get("type")
-            if t == "start_game":
+            if t == "clear_chat":
+                game.clear_chat()
+                await hub.to_audience({"type": "chat_cleared", "payload": {}})
+                await log("🧹 Chat svuotata dalla regia.")
+            elif t == "start_game":
                 if game.start_game():
                     await log("🎉 Partita avviata dalla regia! Gli invitati possono entrare.")
                     await broadcast_state()
@@ -523,6 +551,14 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 game.reset()
                 await hub.to_all({"type": "reset", "payload": {}})
                 await log("🔄 Partita resettata dalla regia.")
+                await broadcast_state()
+            elif t == "hard_restart":
+                cancel_duel_timeout()
+                cancel_duel_countdown()
+                cancel_round_reveal()
+                game.hard_reset()
+                await hub.kick_all_except_regia()
+                await log("💥 Restart totale: tutti i collegamenti sono stati chiusi, si riparte da zero.")
                 await broadcast_state()
     except WebSocketDisconnect:
         hub.regia.discard(websocket)

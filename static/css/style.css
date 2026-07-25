@@ -1333,3 +1333,91 @@ body.enrage-mode .boss-name-tag {
 .avatar-camera-box.mirrored video {
     transform: scaleX(-1);
 }
+
+/* ---- Chat della festa ---- */
+
+.chat-messages {
+    height: 240px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-empty-hint {
+    text-align: center;
+    opacity: 0.6;
+    font-size: 0.85rem;
+    padding: 20px 0;
+}
+
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    animation: leaderboardRowPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chat-message-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.chat-message-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.chat-message-body {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 6px 12px;
+    max-width: 80%;
+    overflow-wrap: anywhere;
+}
+
+.chat-message.chat-message-you .chat-message-body {
+    background: rgba(249, 212, 35, 0.18);
+    border: 1px solid rgba(249, 212, 35, 0.4);
+}
+
+.chat-message-name {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #9d4edd;
+    margin-bottom: 1px;
+}
+
+.chat-message-text {
+    font-size: 0.9rem;
+}
+
+.chat-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.chat-input-row input[type="text"] {
+    flex: 1;
+    margin: 0;
+}
+
+.chat-input-row button {
+    margin: 0;
+    padding: 12px 18px;
+    white-space: nowrap;
+}
