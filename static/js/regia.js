@@ -122,6 +122,10 @@ function handleMessage(msg) {
         addLogEntry(msg.payload.ts, msg.payload.text);
     } else if (msg.type === 'milestone') {
         fxMilestoneToast(msg.payload.emoji, msg.payload.text);
+    } else if (msg.type === 'jolly_activated') {
+        fxMilestoneToast('🃏', `${msg.payload.name} ha giocato il suo Jolly! Un punto in più se vince il duello!`);
+    } else if (msg.type === 'boss_phase2') {
+        fxBossPhase2();
     } else if (msg.type === 'chat_spotlight') {
         fxChatSpotlight(msg.payload.name, msg.payload.avatar, msg.payload.text);
     } else if (msg.type === 'chat_history') {
@@ -160,7 +164,7 @@ function handleMessage(msg) {
         const s = msg.payload;
         const pct = Math.max(0, Math.min(100, (s.hp / s.max_hp) * 100));
         hpBar.style.width = pct + '%';
-        hpLabel.textContent = `HP ${s.hp}/${s.max_hp}`;
+        hpLabel.textContent = (s.boss_phase === 2 ? '😈 FASE 2 — ' : '') + `HP ${s.hp}/${s.max_hp}`;
         phaseBadge.textContent = `fase: ${s.phase}`;
         const isEnraged = s.hp > 0 && pct < 25;
         document.body.classList.toggle('enrage-mode', isEnraged);
@@ -230,7 +234,7 @@ function handleMessage(msg) {
         duelResultCard.style.display = 'none';
         duelChallengerLine.textContent = `Scontro Diretto: ${msg.payload.challenger_name} vs La Laureata!`;
         wheelCard.style.display = 'block';
-        buildWheel(wheelWrap);
+        buildWheel(wheelWrap, msg.payload.active_duel_categories);
     } else if (msg.type === 'wheel_result') {
         spinWheelTo(wheelWrap, msg.payload.category);
         sfxWheelSpin(WHEEL_SPIN_SECONDS_JS);
@@ -329,7 +333,8 @@ function handleMessage(msg) {
         duelResultBanner.className = 'winner-banner';
         if (msg.payload.outcome === 'challenger') {
             duelResultBanner.style.background = '';
-            duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! -${msg.payload.damage} HP alla festeggiata!`;
+            duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! -${msg.payload.damage} HP alla festeggiata!`
+                + (msg.payload.jolly_bonus_score ? ` 🃏 +${msg.payload.jolly_bonus_score} punto bonus dal Jolly!` : '');
             pulseShake(bossPortrait);
             pulseHpFlash(hpBar, hpBarWrap, 'damage');
             fxScreenShake();

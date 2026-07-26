@@ -1266,6 +1266,56 @@ body.enrage-mode .boss-name-tag {
     50% { transform: translate(-50%, -50%) scale(1.05); }
 }
 
+/* ---- Fase 2: annuncio speciale quando la prima barra vita si esaurisce ---- */
+
+.fx-phase2-banner {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10005;
+    font-size: 1.7rem;
+    font-weight: 900;
+    text-align: center;
+    color: #c77dff;
+    text-shadow: 0 0 24px rgba(157, 78, 221, 0.95), 0 4px 10px rgba(0, 0, 0, 0.7);
+    background: rgba(15, 5, 25, 0.9);
+    border: 3px solid #9d4edd;
+    border-radius: 18px;
+    padding: 20px 28px;
+    animation: halfHpPulse 0.5s ease-in-out infinite, fxEpicIn 0.4s ease forwards;
+    max-width: 88vw;
+}
+
+.fx-phase2-banner span {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f4f1ff;
+    margin-top: 8px;
+    text-shadow: none;
+}
+
+/* ---- Bottone Jolly: un solo uso a partita per invitato ---- */
+
+.jolly-btn {
+    margin-top: 14px;
+    background: linear-gradient(135deg, #9d4edd, #ff4e50, #f9d423);
+    background-size: 200% 100%;
+    animation: jollyShimmer 2.5s linear infinite;
+}
+
+.jolly-btn:disabled {
+    opacity: 0.6;
+    animation: none;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+@keyframes jollyShimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
 /* ---- Banner "VS" nei duelli: foto sfidante contro foto della festeggiata ---- */
 
 .duel-vs-banner {
@@ -1707,4 +1757,14 @@ body.boss-page .chat-messages {
     body.regia-page .regia-col .card { max-width: none; }
     body.regia-page .chat-messages { height: 300px; }
     body.regia-page .log-panel { height: 300px; }
+}
+
+/* ---- Credito discreto in fondo alla pagina ---- */
+
+.app-credit {
+    margin: 22px 0 6px;
+    text-align: center;
+    font-size: 0.72rem;
+    color: rgba(244, 241, 255, 0.35);
+    letter-spacing: 0.3px;
 }

@@ -293,6 +293,21 @@ function fxHalfHpBanner() {
     setTimeout(() => div.remove(), 2600);
 }
 
+// ---- Fase 2: quando la prima barra vita si esaurisce, la festeggiata si trasforma ----
+
+function fxBossPhase2() {
+    const existing = document.getElementById("fxPhase2Banner");
+    if (existing) existing.remove();
+    const div = document.createElement("div");
+    div.id = "fxPhase2Banner";
+    div.className = "fx-phase2-banner";
+    div.innerHTML = "😈 FASE 2! 😈<br><span>La festeggiata si è trasformata: nuova barra vita!</span>";
+    document.body.appendChild(div);
+    fxScreenShake();
+    fxConfetti(20);
+    setTimeout(() => div.remove(), 3400);
+}
+
 // ---- Gran finale: la Laureata sconfitta + rivelazione classifica con suspance ----
 
 const FX_DEFEAT_PHOTO = "/resources/silvia_drago1.png";

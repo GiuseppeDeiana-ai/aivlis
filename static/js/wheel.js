@@ -54,25 +54,36 @@ function spinWheelToIndexGeneric(container, count, index) {
     disc.style.transform = `rotate(${deg}deg)`;
 }
 
-// ---- ruota dello scontro diretto (4 categorie fisse) ----
+// ---- ruota dello scontro diretto: le categorie sono dinamiche, una si ritira dalla ruota
+// per il resto della serata quando esaurisce tutte le sue sfide (vedi active_duel_categories) ----
 
-function buildWheel(container) {
+function wheelActiveCats(activeKeys) {
+    if (!activeKeys || !activeKeys.length) return WHEEL_CATEGORIES;
+    const filtered = WHEEL_CATEGORIES.filter((c) => activeKeys.includes(c.key));
+    return filtered.length ? filtered : WHEEL_CATEGORIES;
+}
+
+function buildWheel(container, activeKeys) {
+    const cats = wheelActiveCats(activeKeys);
+    container.dataset.activeCats = JSON.stringify(cats.map((c) => c.key));
     buildWheelGeneric(
         container,
-        WHEEL_CATEGORIES.length,
-        (i) => WHEEL_CATEGORIES[i].color,
-        (i) => WHEEL_CATEGORIES[i].label
+        cats.length,
+        (i) => cats[i].color,
+        (i) => cats[i].label
     );
 }
 
-function angleForCategory(categoryKey) {
-    const idx = WHEEL_CATEGORIES.findIndex((c) => c.key === categoryKey);
-    return angleForIndexGeneric(WHEEL_CATEGORIES.length, idx);
+function angleForCategory(container, categoryKey) {
+    const cats = wheelActiveCats(JSON.parse(container.dataset.activeCats || "null"));
+    const idx = cats.findIndex((c) => c.key === categoryKey);
+    return angleForIndexGeneric(cats.length, idx);
 }
 
 function spinWheelTo(container, categoryKey) {
-    const idx = WHEEL_CATEGORIES.findIndex((c) => c.key === categoryKey);
-    spinWheelToIndexGeneric(container, WHEEL_CATEGORIES.length, idx);
+    const cats = wheelActiveCats(JSON.parse(container.dataset.activeCats || "null"));
+    const idx = cats.findIndex((c) => c.key === categoryKey);
+    spinWheelToIndexGeneric(container, cats.length, idx);
 }
 
 function categoryLabel(categoryKey) {

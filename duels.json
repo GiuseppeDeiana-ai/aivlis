@@ -65,6 +65,30 @@
       "media": "Sabato - Jovanotti (KARAOKE base originale).mp3",
       "options": ["Ragazzo Fortunato", "Bella", "Sabato", "L'Ombelico del Mondo"],
       "answer": 2
+    },
+    {
+      "id": "musica_12",
+      "media": "Bella est sa minigonna - FantasiasDeBallos - Ballittu (live).mp3",
+      "options": ["Bella Est Sa Minigonna", "Non Potho Reposare", "No Potho Reposare (remix)", "Ballu Sardu"],
+      "answer": 0
+    },
+    {
+      "id": "musica_13",
+      "media": "Green Day - Dirty Rotten Bastards (Official Instrumental).mp3",
+      "options": ["Basket Case", "Longview", "Dirty Rotten Bastards", "American Idiot"],
+      "answer": 2
+    },
+    {
+      "id": "musica_14",
+      "media": "The Clash - Should I Stay or Should I Go [instrumental].mp3",
+      "options": ["London Calling", "Rock the Casbah", "Complete Control", "Should I Stay or Should I Go"],
+      "answer": 3
+    },
+    {
+      "id": "musica_15",
+      "media": "TOTO-Hold The Line (instrumental).mp3",
+      "options": ["Africa", "Rosanna", "Hold the Line", "I'll Be Over You"],
+      "answer": 2
     }
   ],
   "film": [
@@ -145,6 +169,24 @@
       "media": "transformers the last knight.jpg",
       "options": ["Transformers - La Vendetta del Caduto", "Transformers 4 - L'Era dell'Estinzione", "Transformers 3", "Transformers: The Last Knight"],
       "answer": 3
+    },
+    {
+      "id": "film_14",
+      "media": "indiana jones.jpg",
+      "options": ["Indiana Jones e il Tempio Maledetto", "Indiana Jones e i Predatori dell'Arca Perduta", "Indiana Jones e l'Ultima Crociata", "Indiana Jones e il Regno del Teschio di Cristallo"],
+      "answer": 1
+    },
+    {
+      "id": "film_15",
+      "media": "joker.jpg",
+      "options": ["Il Cavaliere Oscuro", "Watchmen", "Joker", "V per Vendetta"],
+      "answer": 2
+    },
+    {
+      "id": "film_16",
+      "media": "lotr le due torri.jpg",
+      "options": ["Il Signore degli Anelli - La Compagnia dell'Anello", "Il Signore degli Anelli - Le Due Torri", "Il Signore degli Anelli - Il Ritorno del Re", "Lo Hobbit - Un Viaggio Inaspettato"],
+      "answer": 1
     }
   ],
   "videogioco": [
@@ -305,6 +347,132 @@
       "prompt": "Nascita di Instagram",
       "options": ["2008", "2010", "2012", "2014"],
       "answer": 1
+    },
+    {
+      "id": "data_13",
+      "kind": "date_to_event",
+      "prompt": "1914",
+      "options": ["Inizio della Prima Guerra Mondiale", "Fine della Prima Guerra Mondiale", "La Rivoluzione Russa", "Il Trattato di Versailles"],
+      "answer": 0
+    },
+    {
+      "id": "data_14",
+      "kind": "event_to_date",
+      "prompt": "Fine della Prima Guerra Mondiale (Armistizio)",
+      "options": ["1914", "1917", "1918", "1920"],
+      "answer": 2
+    },
+    {
+      "id": "data_15",
+      "kind": "date_to_event",
+      "prompt": "1929",
+      "options": ["Il Grande Crollo di Wall Street", "Fine della Grande Depressione", "La nascita della Repubblica di Weimar", "L'elezione di Hitler a Cancelliere"],
+      "answer": 0
+    },
+    {
+      "id": "data_16",
+      "kind": "event_to_date",
+      "prompt": "Scoperta del radio e del polonio (Marie Curie)",
+      "options": ["1885", "1898", "1905", "1920"],
+      "answer": 1
+    },
+    {
+      "id": "data_17",
+      "kind": "date_to_event",
+      "prompt": "1957",
+      "options": ["Lancio dello Sputnik, il primo satellite artificiale", "Il primo uomo sulla Luna", "La fondazione della NASA", "La crisi dei missili di Cuba"],
+      "answer": 0
+    },
+    {
+      "id": "data_18",
+      "kind": "event_to_date",
+      "prompt": "Crisi dei missili di Cuba",
+      "options": ["1959", "1962", "1965", "1968"],
+      "answer": 1
+    },
+    {
+      "id": "data_19",
+      "kind": "event_to_date",
+      "prompt": "Caduta dell'Unione Sovietica",
+      "options": ["1985", "1989", "1991", "1993"],
+      "answer": 2
+    },
+    {
+      "id": "data_20",
+      "kind": "date_to_event",
+      "prompt": "1215",
+      "options": ["La firma della Magna Carta", "L'inizio delle Crociate", "La fondazione di Oxford", "La battaglia di Hastings"],
+      "answer": 0
+    },
+    {
+      "id": "data_21",
+      "kind": "event_to_date",
+      "prompt": "Battaglia di Waterloo",
+      "options": ["1805", "1812", "1815", "1820"],
+      "answer": 2
+    },
+    {
+      "id": "data_22",
+      "kind": "event_to_date",
+      "prompt": "Nascita ufficiale dell'Unione Europea (Trattato di Maastricht)",
+      "options": ["1957", "1989", "1993", "2002"],
+      "answer": 2
+    },
+    {
+      "id": "data_23",
+      "kind": "date_to_event",
+      "prompt": "1453",
+      "options": ["La caduta di Costantinopoli", "L'inizio del Rinascimento", "La scoperta dell'America", "Lo Scisma d'Oriente"],
+      "answer": 0
+    },
+    {
+      "id": "data_24",
+      "kind": "event_to_date",
+      "prompt": "Rivoluzione Russa (Rivoluzione d'Ottobre)",
+      "options": ["1905", "1914", "1917", "1922"],
+      "answer": 2
+    },
+    {
+      "id": "data_25",
+      "kind": "date_to_event",
+      "prompt": "1776",
+      "options": ["La Dichiarazione d'Indipendenza degli Stati Uniti", "La fine della Guerra d'Indipendenza americana", "La Costituzione Americana", "La Guerra Civile Americana"],
+      "answer": 0
+    },
+    {
+      "id": "data_26",
+      "kind": "event_to_date",
+      "prompt": "Abolizione della schiavitù negli Stati Uniti (XIII Emendamento)",
+      "options": ["1850", "1863", "1865", "1870"],
+      "answer": 2
+    },
+    {
+      "id": "data_27",
+      "kind": "date_to_event",
+      "prompt": "1985",
+      "options": ["Il primo rilascio di Windows", "La nascita di Internet", "La fondazione di Google", "La nascita di Wikipedia"],
+      "answer": 0
+    },
+    {
+      "id": "data_28",
+      "kind": "event_to_date",
+      "prompt": "Nascita di Google",
+      "options": ["1995", "1998", "2000", "2004"],
+      "answer": 1
+    },
+    {
+      "id": "data_29",
+      "kind": "date_to_event",
+      "prompt": "1848",
+      "options": ["L'Anno delle Rivoluzioni in Europa", "La Guerra di Crimea", "Il Congresso di Vienna", "La Comune di Parigi"],
+      "answer": 0
+    },
+    {
+      "id": "data_30",
+      "kind": "event_to_date",
+      "prompt": "Presa di Roma (fine del potere temporale del Papa)",
+      "options": ["1861", "1866", "1870", "1900"],
+      "answer": 2
     }
   ],
   "cultura_generale": [
@@ -391,6 +559,202 @@
       "prompt": "Qual e' la lingua piu' parlata al mondo come madrelingua?",
       "options": ["Cinese mandarino", "Inglese", "Spagnolo", "Hindi"],
       "answer": 0
+    },
+    {
+      "id": "cultura_13",
+      "kind": "trivia",
+      "prompt": "Qual e' la capitale del Giappone?",
+      "options": ["Osaka", "Tokyo", "Kyoto", "Yokohama"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_14",
+      "kind": "trivia",
+      "prompt": "Quanti continenti ci sono?",
+      "options": ["5", "6", "7", "8"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_15",
+      "kind": "trivia",
+      "prompt": "Chi ha scritto \"I Promessi Sposi\"?",
+      "options": ["Giovanni Verga", "Alessandro Manzoni", "Luigi Pirandello", "Gabriele D'Annunzio"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_16",
+      "kind": "trivia",
+      "prompt": "Qual e' il pianeta piu' grande del sistema solare?",
+      "options": ["Saturno", "Urano", "Giove", "Nettuno"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_17",
+      "kind": "trivia",
+      "prompt": "Qual e' la lingua ufficiale del Brasile?",
+      "options": ["Spagnolo", "Portoghese", "Italiano", "Inglese"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_18",
+      "kind": "trivia",
+      "prompt": "Quanti giocatori di movimento ci sono in campo in una squadra di calcio?",
+      "options": ["10", "11", "12", "9"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_19",
+      "kind": "trivia",
+      "prompt": "Chi ha dipinto \"L'Urlo\"?",
+      "options": ["Vincent Van Gogh", "Claude Monet", "Edvard Munch", "Gustav Klimt"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_20",
+      "kind": "trivia",
+      "prompt": "Qual e' il simbolo chimico dell'ossigeno?",
+      "options": ["Os", "Og", "O", "Ox"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_21",
+      "kind": "trivia",
+      "prompt": "In quale continente si trova l'Egitto?",
+      "options": ["Asia", "Africa", "Europa", "Oceania"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_22",
+      "kind": "trivia",
+      "prompt": "Qual e' il numero atomico dell'idrogeno?",
+      "options": ["1", "2", "6", "8"],
+      "answer": 0
+    },
+    {
+      "id": "cultura_23",
+      "kind": "trivia",
+      "prompt": "Chi ha scritto \"Romeo e Giulietta\"?",
+      "options": ["Oscar Wilde", "William Shakespeare", "Molière", "Miguel de Cervantes"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_24",
+      "kind": "trivia",
+      "prompt": "Quante zampe ha un ragno?",
+      "options": ["6", "8", "10", "4"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_25",
+      "kind": "trivia",
+      "prompt": "Qual e' la valuta ufficiale del Giappone?",
+      "options": ["Won", "Yuan", "Yen", "Rupia"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_26",
+      "kind": "trivia",
+      "prompt": "Qual e' il mare piu' salato del mondo?",
+      "options": ["Mar Rosso", "Mar Morto", "Mar Mediterraneo", "Mar Nero"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_27",
+      "kind": "trivia",
+      "prompt": "Chi ha composto \"Le Quattro Stagioni\"?",
+      "options": ["Johann Sebastian Bach", "Wolfgang Amadeus Mozart", "Antonio Vivaldi", "Ludwig van Beethoven"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_28",
+      "kind": "trivia",
+      "prompt": "Qual e' la capitale della Russia?",
+      "options": ["San Pietroburgo", "Mosca", "Kiev", "Minsk"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_29",
+      "kind": "trivia",
+      "prompt": "Quanti colori ha l'arcobaleno (nel conteggio tradizionale)?",
+      "options": ["5", "6", "7", "8"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_30",
+      "kind": "trivia",
+      "prompt": "Qual e' l'animale terrestre piu' veloce del mondo?",
+      "options": ["Leone", "Ghepardo", "Gazzella", "Leopardo"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_31",
+      "kind": "trivia",
+      "prompt": "In quale gioco si usa il termine \"scacco matto\"?",
+      "options": ["Dama", "Scacchi", "Poker", "Bridge"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_32",
+      "kind": "trivia",
+      "prompt": "Qual e' il vulcano attivo piu' alto d'Europa?",
+      "options": ["Vesuvio", "Stromboli", "Etna", "Vulcano"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_33",
+      "kind": "trivia",
+      "prompt": "Quanti minuti dura il tempo regolamentare di una partita di calcio?",
+      "options": ["80", "90", "60", "120"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_34",
+      "kind": "trivia",
+      "prompt": "Chi ha scoperto la penicillina?",
+      "options": ["Louis Pasteur", "Marie Curie", "Alexander Fleming", "Robert Koch"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_35",
+      "kind": "trivia",
+      "prompt": "Qual e' il deserto caldo piu' grande del mondo?",
+      "options": ["Gobi", "Sahara", "Kalahari", "Atacama"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_36",
+      "kind": "trivia",
+      "prompt": "In quale nazione si trova la Torre Eiffel?",
+      "options": ["Italia", "Francia", "Spagna", "Belgio"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_37",
+      "kind": "trivia",
+      "prompt": "Qual e' il simbolo chimico dell'oro?",
+      "options": ["Ag", "Au", "Fe", "Pb"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_38",
+      "kind": "trivia",
+      "prompt": "Quante corde ha una chitarra classica?",
+      "options": ["4", "6", "8", "12"],
+      "answer": 1
+    },
+    {
+      "id": "cultura_39",
+      "kind": "trivia",
+      "prompt": "Qual e' la montagna piu' alta d'Italia?",
+      "options": ["Gran Paradiso", "Monte Rosa", "Monte Bianco", "Cervino"],
+      "answer": 2
+    },
+    {
+      "id": "cultura_40",
+      "kind": "trivia",
+      "prompt": "Chi ha scritto \"Il Piccolo Principe\"?",
+      "options": ["Jules Verne", "Victor Hugo", "Antoine de Saint-Exupéry", "Marcel Proust"],
+      "answer": 2
     }
   ]
 }

@@ -102,6 +102,10 @@ function handleMessage(msg) {
         fxChatSpotlight(msg.payload.name, msg.payload.avatar, msg.payload.text);
     } else if (msg.type === 'milestone') {
         fxMilestoneToast(msg.payload.emoji, msg.payload.text);
+    } else if (msg.type === 'jolly_activated') {
+        fxMilestoneToast('🃏', `${msg.payload.name} ha giocato il suo Jolly! Un punto in più se vince il duello!`);
+    } else if (msg.type === 'boss_phase2') {
+        fxBossPhase2();
     } else if (msg.type === 'reaction') {
         fxFloatingReaction(msg.payload.emoji);
     } else if (msg.type === 'wait_boss') {
@@ -164,9 +168,9 @@ function handleMessage(msg) {
         }
     } else if (msg.type === 'duel_start') {
         fxSkull();
-        startDuelView(msg.payload.challenger_name);
+        startDuelView(msg.payload.challenger_name, msg.payload.active_duel_categories);
     } else if (msg.type === 'wheel_result') {
-        showWheelSpin(msg.payload.category);
+        showWheelSpin(msg.payload.category, msg.payload.active_duel_categories);
         setTimeout(() => {
             wheelStatusText.textContent = 'Ruota fermata! In attesa che la regia invii la sfida a tutti...';
         }, WHEEL_SPIN_SECONDS_JS * 1000);
@@ -253,7 +257,7 @@ function handleMessage(msg) {
     }
 }
 
-function startDuelView(challengerName) {
+function startDuelView(challengerName, activeDuelCategories) {
     questionCard.style.display = 'none';
     winnerBanner.style.display = 'none';
     duelScreen.style.display = 'block';
@@ -262,13 +266,13 @@ function startDuelView(challengerName) {
     duelChallengerLine.textContent = `Scontro Diretto: ${challengerName} vs La Laureata!`;
     wheelCard.style.display = 'block';
     wheelStatusText.textContent = 'La festeggiata sta girando la ruota...';
-    buildWheel(wheelWrap);
+    buildWheel(wheelWrap, activeDuelCategories);
 }
 
-function showWheelSpin(category) {
+function showWheelSpin(category, activeDuelCategories) {
     if (wheelCard.style.display === 'none') {
         wheelCard.style.display = 'block';
-        buildWheel(wheelWrap);
+        buildWheel(wheelWrap, activeDuelCategories);
     }
     spinWheelTo(wheelWrap, category);
 }
@@ -336,7 +340,8 @@ function showDuelResult(payload) {
     duelResultBanner.className = 'winner-banner';
     if (payload.outcome === 'challenger') {
         duelResultBanner.style.background = '';
-        duelResultBanner.textContent = `${payload.winner_name} e' stato piu' veloce! -${payload.damage} HP alla festeggiata!`;
+        duelResultBanner.textContent = `${payload.winner_name} e' stato piu' veloce! -${payload.damage} HP alla festeggiata!`
+            + (payload.jolly_bonus_score ? ` 🃏 +${payload.jolly_bonus_score} punto bonus dal Jolly!` : '');
     } else if (payload.outcome === 'boss') {
         duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
         duelResultBanner.textContent = 'La Laureata ha risposto prima! Nessun danno.';
@@ -352,7 +357,7 @@ function showDuelResult(payload) {
 function updateState(state) {
     const pct = Math.max(0, Math.min(100, (state.hp / state.max_hp) * 100));
     hpBar.style.width = pct + '%';
-    hpLabel.textContent = `HP ${state.hp}/${state.max_hp}`;
+    hpLabel.textContent = (state.boss_phase === 2 ? '😈 FASE 2 — ' : '') + `HP ${state.hp}/${state.max_hp}`;
     roundLine.textContent = state.total_rounds > 0 ? `Domanda ${state.round}/${state.total_rounds}` : '';
     lobbyCard.style.display = fxShouldShowRules('spectate', state.phase) ? 'block' : 'none';
     document.body.classList.toggle('enrage-mode', state.hp > 0 && pct < 25);

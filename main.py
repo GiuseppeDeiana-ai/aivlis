@@ -161,6 +161,15 @@ async def check_game_over():
         await log("💀 La festeggiata e' stata sconfitta! Game over.")
 
 
+async def announce_phase2_if_needed():
+    """Quando la fase 1 si esaurisce, la festeggiata non e' sconfitta: si trasforma ed entra
+    nella fase 2 con una barra vita tutta nuova. Lo segnaliamo a tutti con un annuncio speciale."""
+    if game.phase2_just_started:
+        game.phase2_just_started = False
+        await hub.to_all({"type": "boss_phase2", "payload": {}})
+        await log("😈 FASE 2! La festeggiata si e' trasformata: nuova barra vita, si ricomincia a colpire.")
+
+
 def cancel_duel_timeout():
     global duel_timeout_task
     if duel_timeout_task is not None:
@@ -201,6 +210,7 @@ async def broadcast_duel_result(payload: dict):
     else:
         await log("⚔️ Nessuno ha risposto correttamente allo scontro, nessun danno.")
     await check_game_over()
+    await announce_phase2_if_needed()
     if game.hp > 0:
         asyncio.create_task(run_return_home())
 
@@ -235,11 +245,18 @@ async def run_penance_sequence():
 
 
 async def run_wheel_sequence():
+    categories_before_spin = list(game.active_duel_categories)
     category = game.spin_wheel()
     if category is None:
         return
     await log(f"🎡 Ruota dello scontro girata: categoria \"{category}\"")
-    await hub.to_all({"type": "wheel_result", "payload": {"category": category}})
+    # la ruota mostrata deve includere SEMPRE la categoria appena estratta, anche se questo
+    # stesso spin l'ha appena esaurita e ritirata da quelle future: altrimenti un client che
+    # ricostruisce la ruota da questo messaggio (es. uno spettatore appena collegato) non
+    # troverebbe lo spicchio su cui la ruota deve fermarsi.
+    await hub.to_all({"type": "wheel_result", "payload": {"category": category, "active_duel_categories": categories_before_spin}})
+    if category not in game.active_duel_categories:
+        await log(f"🏁 Categoria \"{category}\" esaurita: da ora non comparirà più sulla ruota.")
     await asyncio.sleep(WHEEL_SPIN_SECONDS)
     if not game.duel_awaiting_confirm or game.duel_category != category:
         return  # la regia ha annullato lo scontro mentre la ruota stava ancora girando
@@ -412,6 +429,14 @@ async def ws_guest(websocket: WebSocket, name: str = "", id: str = ""):
                     else:
                         await hub.to_all({"type": "duel_answer_registered", "payload": {"by": "challenger"}})
                         await log(f"✍️ {guest_name} (sfidante) ha risposto, in attesa della festeggiata...")
+            elif t == "activate_jolly":
+                if game.activate_jolly(guest_id):
+                    await hub.to_all({
+                        "type": "jolly_activated",
+                        "payload": {"name": guest_name},
+                    })
+                    await log(f"🃏 {guest_name} ha giocato il suo Jolly! Un punto in più se vince il duello.")
+                    await broadcast_state()
     except (WebSocketDisconnect, RuntimeError):
         # Starlette puo' segnare una connessione come "non piu' connessa" a causa di un invio
         # fallito verso di lei da un broadcast concorrente (es. un altro evento di gioco che
@@ -541,8 +566,17 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
             elif t == "start_duel":
                 if game.start_duel():
                     challenger_name = game.guests[game.challenger_id].name
-                    await hub.to_all({"type": "duel_start", "payload": {"challenger_name": challenger_name}})
+                    await hub.to_all({
+                        "type": "duel_start",
+                        "payload": {"challenger_name": challenger_name, "active_duel_categories": game.active_duel_categories},
+                    })
                     await log(f"⚔️ Scontro diretto avviato: {challenger_name} vs la festeggiata.")
+                    challenger_ws = hub.guests.get(game.challenger_id)
+                    if challenger_ws is not None:
+                        already_used = game.guests[game.challenger_id].jolly_used
+                        await hub._send(challenger_ws, {"type": "jolly_offer", "payload": {"available": not already_used}})
+                elif not game.active_duel_categories:
+                    await log("🚫 Impossibile avviare lo scontro: tutte le categorie sono state esaurite.")
                 else:
                     await log("🚫 Impossibile avviare lo scontro: nessun vincitore in attesa.")
                 await broadcast_state()
@@ -584,6 +618,7 @@ async def ws_regia(websocket: WebSocket, key: str = ""):
                 await hub.to_all({"type": "boss_hit", "payload": {"amount": amount}})
                 await log(f"💥 Danno manuale dalla regia: -{amount} HP.")
                 await check_game_over()
+                await announce_phase2_if_needed()
                 await broadcast_state()
             elif t == "reveal_leaderboard":
                 if game.hp <= 0:

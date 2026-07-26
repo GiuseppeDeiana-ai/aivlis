@@ -9,6 +9,7 @@ from typing import Optional
 DUEL_CATEGORIES = ["musica", "film", "videogioco", "data", "cultura_generale"]
 DUEL_DAMAGE = 25
 DUEL_WIN_BONUS_SCORE = 1
+JOLLY_BONUS_SCORE = 1  # punto extra (oltre al normale +1) se si vince il duello col jolly attivo
 BOSS_ID = "boss"
 PENANCE_HEAL = 10
 DEFAULT_PENANCE_LIMIT = 3
@@ -16,6 +17,8 @@ MAX_AVATAR_LENGTH = 400_000  # ~300KB decoded: sufficiente per una foto 200x200 
 MAX_CHAT_LENGTH = 140
 CHAT_COOLDOWN_SECONDS = 2.0
 MAX_CHAT_HISTORY = 30
+PHASE_1_MAX_HP = 150
+PHASE_2_MAX_HP = 150  # seconda barra vita tutta nuova quando la prima si esaurisce (stile boss a fasi)
 
 
 class Phase(str, Enum):
@@ -46,10 +49,11 @@ class Guest:
     total_answers: int = 0
     last_chat_at: Optional[float] = None
     chat_message_count: int = 0
+    jolly_used: bool = False
 
 
 class GameState:
-    def __init__(self, questions_path: Path, duels_path: Path, penances_path: Path, max_hp: int = 100):
+    def __init__(self, questions_path: Path, duels_path: Path, penances_path: Path, max_hp: int = PHASE_1_MAX_HP):
         self.questions = json.loads(Path(questions_path).read_text(encoding="utf-8"))
         self.duels: dict[str, list[dict]] = json.loads(Path(duels_path).read_text(encoding="utf-8"))
         self.penances: list[str] = json.loads(Path(penances_path).read_text(encoding="utf-8"))
@@ -64,12 +68,17 @@ class GameState:
         self.guest_answers: dict[str, dict] = {}
         self.winner_id: Optional[str] = None
         self.guests: dict[str, Guest] = {}
+        self._phase1_max_hp = max_hp
         self.max_hp = max_hp
         self.hp = max_hp
+        self.boss_phase: int = 1
+        self.phase2_just_started: bool = False
         self.chat_messages: list[dict] = []
 
         self.used_challenge_ids: set[str] = set()
         self.used_duel_categories: set[str] = set()
+        self.active_duel_categories: list[str] = list(DUEL_CATEGORIES)
+        self.jolly_active: bool = False
         self.challenger_id: Optional[str] = None
         self.duel_category: Optional[str] = None
         self.duel_challenge: Optional[dict] = None
@@ -87,6 +96,7 @@ class GameState:
         if self.current_question_index is not None:
             return self.questions[self.current_question_index]
         return None
+
 
     def start_round(self) -> bool:
         """Le domande classiche sono pescate a caso senza ripetizioni finche' non sono
@@ -223,8 +233,18 @@ class GameState:
             self.guests[guest_id].connected = True
 
     def damage_boss(self, amount: int):
+        """Se la fase 1 si esaurisce, la festeggiata non e' sconfitta: entra in una seconda
+        fase con una barra vita tutta nuova (come i boss a piu' fasi dei giochi action) - la
+        vera sconfitta arriva solo esaurendo anche la fase 2."""
         self.hp = max(0, self.hp - amount)
-        if self.hp == 0:
+        if self.hp > 0:
+            return
+        if self.boss_phase == 1:
+            self.boss_phase = 2
+            self.max_hp = PHASE_2_MAX_HP
+            self.hp = PHASE_2_MAX_HP
+            self.phase2_just_started = True
+        else:
             self.phase = Phase.GAME_OVER
 
     def start_game(self) -> bool:
@@ -243,9 +263,14 @@ class GameState:
         self.boss_answer = None
         self.guest_answers = {}
         self.winner_id = None
+        self.boss_phase = 1
+        self.max_hp = self._phase1_max_hp
         self.hp = self.max_hp
+        self.phase2_just_started = False
         self.used_challenge_ids = set()
         self.used_duel_categories = set()
+        self.active_duel_categories = list(DUEL_CATEGORIES)
+        self.jolly_active = False
         self.challenger_id = None
         self.duel_category = None
         self.duel_challenge = None
@@ -269,15 +294,36 @@ class GameState:
     def start_duel(self) -> bool:
         if self.phase != Phase.ROUND_RESULT or not self.winner_id:
             return False
+        if not self.active_duel_categories:
+            return False
         self.challenger_id = self.winner_id
         self.duel_answers = {}
         self.duel_winner = None
+        self.jolly_active = False
         self.phase = Phase.DUEL_WHEEL
+        return True
+
+    def activate_jolly(self, guest_id: str) -> bool:
+        """Lo sfidante puo' giocare il suo UNICO jolly a partita prima che la ruota riveli
+        la categoria: se poi vince il duello, il danno raddoppia. Si consuma comunque, anche
+        se poi perde - e' un azzardo, non un'assicurazione."""
+        if self.phase != Phase.DUEL_WHEEL or guest_id != self.challenger_id:
+            return False
+        guest = self.guests.get(guest_id)
+        if guest is None or guest.jolly_used:
+            return False
+        guest.jolly_used = True
+        self.jolly_active = True
         return True
 
     def cancel_duel(self) -> bool:
         if self.phase not in (Phase.DUEL_WHEEL, Phase.DUEL_CHALLENGE):
             return False
+        if self.jolly_active and self.challenger_id in self.guests:
+            # il duello non e' avvenuto per una scelta della regia, non per colpa dello
+            # sfidante: il suo unico jolly gli torna disponibile.
+            self.guests[self.challenger_id].jolly_used = False
+        self.jolly_active = False
         self.challenger_id = None
         self.duel_category = None
         self.duel_challenge = None
@@ -287,28 +333,37 @@ class GameState:
         self.phase = Phase.ROUND_RESULT
         return True
 
+    def _category_exhausted(self, category: str) -> bool:
+        ids = {c["id"] for c in self.duels.get(category, [])}
+        return bool(ids) and ids <= self.used_challenge_ids
+
     def _pick_challenge(self, category: str) -> dict:
+        """Non ricicla piu' le sfide gia' usate: una volta che una categoria e' esaurita
+        viene ritirata dalla ruota (vedi spin_wheel), quindi qui c'e' sempre almeno una
+        sfida ancora inedita da pescare."""
         pool = [c for c in self.duels.get(category, []) if c["id"] not in self.used_challenge_ids]
-        if not pool:
-            pool = self.duels.get(category, [])
-            self.used_challenge_ids -= {c["id"] for c in pool}
         challenge = random.choice(pool)
         self.used_challenge_ids.add(challenge["id"])
         return challenge
 
     def spin_wheel(self) -> Optional[str]:
         """Le categorie escono a caso ma senza ripetizioni finche' non sono uscite tutte
-        (stesso principio delle domande classiche): se esce "videogioco" non puo' riuscire
-        di nuovo finche' non sono uscite anche tutte le altre; poi il giro si rimescola."""
-        if self.phase != Phase.DUEL_WHEEL:
+        quelle ancora attive (se esce "videogioco" non puo' riuscire di nuovo finche' non
+        sono uscite anche tutte le altre, poi il giro si rimescola). Una categoria che
+        esaurisce l'intero set di sfide viene ritirata definitivamente dalla ruota, per non
+        rischiare di ripetere la stessa sfida due volte in una serata."""
+        if self.phase != Phase.DUEL_WHEEL or not self.active_duel_categories:
             return None
-        if len(self.used_duel_categories) >= len(DUEL_CATEGORIES):
+        if len(self.used_duel_categories) >= len(self.active_duel_categories):
             self.used_duel_categories = set()
-        pool = [c for c in DUEL_CATEGORIES if c not in self.used_duel_categories]
+        pool = [c for c in self.active_duel_categories if c not in self.used_duel_categories]
         category = random.choice(pool)
         self.used_duel_categories.add(category)
         self.duel_category = category
         self.duel_challenge = self._pick_challenge(category)
+        if self._category_exhausted(category):
+            self.active_duel_categories.remove(category)
+            self.used_duel_categories.discard(category)
         self.duel_answers = {}
         self.duel_winner = None
         self.duel_awaiting_confirm = True
@@ -351,7 +406,8 @@ class GameState:
             if responder_id == self.challenger_id:
                 self.damage_boss(DUEL_DAMAGE)
                 if responder_id in self.guests:
-                    self.guests[responder_id].score += DUEL_WIN_BONUS_SCORE
+                    bonus = DUEL_WIN_BONUS_SCORE + (JOLLY_BONUS_SCORE if self.jolly_active else 0)
+                    self.guests[responder_id].score += bonus
                 self._record_duel_stats(True)
             else:
                 self._record_duel_stats(False)
@@ -392,6 +448,8 @@ class GameState:
             "winner_name": winner_name,
             "correct_option": c["answer"],
             "damage": DUEL_DAMAGE if outcome == "challenger" else 0,
+            "jolly_active": self.jolly_active,
+            "jolly_bonus_score": JOLLY_BONUS_SCORE if (outcome == "challenger" and self.jolly_active) else 0,
             "boss_choice": self.duel_answers.get(BOSS_ID, {}).get("choice"),
             "challenger_choice": self.duel_answers.get(self.challenger_id, {}).get("choice") if self.challenger_id else None,
         }
@@ -590,6 +648,7 @@ class GameState:
             "question": {"text": q["text"], "options": q["options"]} if q else None,
             "hp": self.hp,
             "max_hp": self.max_hp,
+            "boss_phase": self.boss_phase,
             "winner": winner_name,
             "answers_count": len(self.guest_answers),
             "guests_online": sum(1 for g in self.guests.values() if g.connected),
@@ -599,6 +658,7 @@ class GameState:
             )[:10],
             "challenger_name": challenger_name,
             "duel_category": self.duel_category,
+            "active_duel_categories": self.active_duel_categories,
             "penance_limit": self.penance_limit,
             "penance_used": self.penance_used,
             "penance_remaining": self.penance_remaining(),

@@ -97,6 +97,10 @@ function handleMessage(msg) {
         // keepalive, nessuna azione necessaria
     } else if (msg.type === 'milestone') {
         fxMilestoneToast(msg.payload.emoji, msg.payload.text);
+    } else if (msg.type === 'jolly_activated') {
+        fxMilestoneToast('🃏', `${msg.payload.name} ha giocato il suo Jolly! Un punto in più se vince il duello!`);
+    } else if (msg.type === 'boss_phase2') {
+        fxBossPhase2();
     } else if (msg.type === 'round_countdown') {
         statusLine.textContent = 'Il conto alla rovescia e iniziato per gli invitati...';
         fxCountdown(msg.payload.seconds);
@@ -139,7 +143,7 @@ function handleMessage(msg) {
         duelChallengerLine.textContent = `Scontro Diretto contro ${msg.payload.challenger_name}!`;
         wheelCard.style.display = 'block';
         wheelStatusText.textContent = '';
-        buildWheel(wheelWrap);
+        buildWheel(wheelWrap, msg.payload.active_duel_categories);
         spinBtn.disabled = false;
         statusLine.textContent = 'Gira la ruota per scegliere la categoria!';
     } else if (msg.type === 'wheel_result') {
@@ -225,7 +229,8 @@ function handleMessage(msg) {
             fxVibrate([100, 50, 100]);
         } else if (msg.payload.outcome === 'challenger') {
             duelResultBanner.style.background = 'linear-gradient(135deg, #666, #333)';
-            duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! Hai subito ${msg.payload.damage} danni!`;
+            duelResultBanner.textContent = `${msg.payload.winner_name} e' stato piu' veloce! Hai subito ${msg.payload.damage} danni!`
+                + (msg.payload.jolly_bonus_score ? ` (aveva il Jolly attivo)` : '');
             pulseShake(bossPortrait);
             pulseHpFlash(hpBar, hpBarWrap, 'damage');
             fxScreenShake();
@@ -282,7 +287,7 @@ function handleMessage(msg) {
     } else if (msg.type === 'state') {
         const pct = Math.max(0, Math.min(100, (msg.payload.hp / msg.payload.max_hp) * 100));
         hpBar.style.width = pct + '%';
-        hpLabel.textContent = `HP ${msg.payload.hp}/${msg.payload.max_hp}`;
+        hpLabel.textContent = (msg.payload.boss_phase === 2 ? '😈 FASE 2 — ' : '') + `HP ${msg.payload.hp}/${msg.payload.max_hp}`;
         lobbyCard.style.display = fxShouldShowRules('boss', msg.payload.phase) ? 'block' : 'none';
         document.body.classList.toggle('enrage-mode', msg.payload.hp > 0 && pct < 25);
         if (!halfHpAnnounced && msg.payload.hp > 0 && pct <= 50) {
